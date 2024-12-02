@@ -113,6 +113,54 @@ _start:
     mov rdi, rax
     call printnumln
 
+    ; PART 2
+
+    ; sort-of merge-join
+
+    section .rodata
+        part2_string: db `part2: \0`
+    section .text
+    mov rdi, part2_string
+    call printc
+
+    ; sum
+    xor eax, eax
+    mov rdx, [array1]
+    mov rcx, [array2]
+    ; left index
+    mov r8, 0
+    ; right index
+    mov r9, 0
+    .loop:
+        cmp r8, [array1+0x8]
+        jae .end
+        mov rdi, [rdx + r8 * 8]
+
+        mov r9, 0
+        ; count
+        mov r10, 0
+        .loop2:
+            cmp r9, [array2+0x8]
+            jae .loop2end
+            mov rsi, [rcx + r9 * 8]
+            inc r9
+            cmp rdi, rsi
+            ja .loop2
+            jb .loop2end
+            inc r10
+            jmp .loop2
+        .loop2end:
+        ; reset right counter to before the current number started in case of duplicates
+        sub r9, r10
+        imul r10, rdi
+        add rax, r10
+        inc r8
+        jmp .loop
+
+    .end:
+    mov rdi, rax
+    call printnumln
+
     mov rdi, 0
     call exit
 
