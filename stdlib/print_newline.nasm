@@ -1,15 +1,13 @@
 section .text
-global print_newline
 print_newline:
     push rbp
     mov rbp, rsp
 
-    mov rdi, 1
+    rodata_cstring .ln, `\n`
+    mov rdi, STDOUT
     mov rsi, .ln
     mov rdx, 1
-    call write
+    call syscall_write
 
     pop rbp
     ret
-
-.ln: db `\n`

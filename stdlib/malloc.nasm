@@ -1,37 +1,23 @@
 ; INPUT
 ; * rdi: number of bytes
-extern _end
-section .data
-    brk_val: dq _end
-    PROT_READ: dq 0x1
-    PROT_WRITE: dq 0x2
-    PROT_EXEC: dq 0x4
-    MAP_SHARED: dq 0x01
-    MAP_PRIVATE: dq 0x02
-    MAP_ANONYMOUS: dq 0x20
-
 section .text
-global malloc
 malloc:
+    ; we store the allocated length at the beginning of
+    ; the allocated page to be used for munmap /free
     push rbp
     mov rbp, rsp
     push r12
     %define length r12
+    add rdi, 8
     mov length, rdi
 
-    mov rsi, rdi
-    ; length stored on the page for munmap / free
-    add rsi, 8
-    mov rax, 9
+    mov rsi, length
     mov rdi, 0
-    mov rdx, [PROT_READ]
-    or rdx, [PROT_WRITE]
-    mov r10, [MAP_ANONYMOUS]
-    or r10, [MAP_PRIVATE]
+    mov rdx, PROT_READ | PROT_WRITE
+    mov r10, MAP_ANONYMOUS | MAP_PRIVATE
     mov r8, -1
     mov r9, 0
-    syscall
-    call handleerror
+    call syscall_mmap
 
     mov [rax], length
     add rax, 8
@@ -40,7 +26,36 @@ malloc:
     pop rbp
     ret
 
-global brkmalloc
+; INPUT:
+; * rdi: ptr to free (must have been created via malloc)
+; * rsi: length of the allocation as requested to malloc
+section .text
+free:
+    push rbp
+    mov rbp, rsp
+
+    sub rdi, 8
+    test rdi, 0x0fff
+    jz .next
+    mov r12, rdi
+    rodata_cstring .err, `free called with non-aligned pointer: `
+    mov rdi, .err
+    call cstring__print
+    mov rdi, r12
+    call u64__printhexln
+    panic `aborting\n`
+
+    .next:
+    add rsi, 8
+    call syscall_munmap
+
+    pop rbp
+    ret
+
+extern _end
+section .data
+    brk_val: dq _end
+
 brkmalloc:
     push rbp
     mov rbp, rsp
@@ -66,7 +81,6 @@ brkmalloc:
 ; * rdi: (out) Array<T> where sizeof(T) == rdx
 ; * rsi: number of elements
 ; * rdx: size of each element
-global calloc
 calloc:
     push rbp
     mov rbp, rsp

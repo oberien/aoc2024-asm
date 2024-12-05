@@ -1,8 +1,7 @@
 ; INPUT:
 ; * rdi: exit code
 section .text
-global exit
-exit:
+syscall_exit:
     mov rax, 60
     syscall
     ud2

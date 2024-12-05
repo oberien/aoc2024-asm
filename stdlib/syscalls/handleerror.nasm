@@ -3,7 +3,6 @@
 ; OUTPUT:
 ; * rax: not modified -- return value of the syscall
 section .text
-global handleerror
 handleerror:
     cmp rax, 0
     jl .error
@@ -12,5 +11,5 @@ handleerror:
    .error:
    mov rdi, rax
    neg rdi
-   call exit
+   int3
    ud2

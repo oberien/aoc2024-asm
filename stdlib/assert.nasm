@@ -1,31 +1,40 @@
-; INPUT:
-; * rdi: arg1
-; * rsi: arg2
+; doesn't modify any registers in success-case
+%macro assert_eq 2
+    cmp qword %1, qword %2
+    je %%noerror
+    push rbp
+    sub rsp, 0x10
+    mov rbp, %2
+    mov [rsp + 0x8], rbp
+    mov rbp, %1
+    mov [rsp], rbp
+    mov rbp, [rsp + 0x10]
+    call assert_eq_error
+    %%noerror:
+
+%endmacro
+
+; 2 arguments on the stack
 section .text
-global assert_eq
-assert_eq:
-    cmp rdi, rsi
-    jne .error
-    ret
+assert_eq_error:
+    push rbp
+    mov rbp, rsp
 
-    .error:
-        mov r12, rdi
-        mov r13, rsi
-        mov rdi, assert_eq_string1
-        call printc
-        mov rdi, r12
-        call printnum
-        mov rdi, assert_eq_string2
-        call printc
-        mov rdi, r13
-        call printnum
-        mov rdi, assert_eq_string3
-        call printc
-        mov rdi, -1
-        call exit
-        ud2
-
-section .rodata
-    assert_eq_string1: db `assert_eq failed on \`\0`
-    assert_eq_string2: db `\` == \`\0`
-    assert_eq_string3: db `\`\n\0`
+    mov r12, [rbp + 0x10]
+    mov r13, [rbp + 0x18]
+    rodata_cstring .s1, `assert_eq failed on \``
+    mov rdi, .s1
+    call cstring__print
+    mov rdi, r12
+    call u64__print
+    rodata_cstring .s2, `\` == \``
+    mov rdi, .s2
+    call cstring__print
+    mov rdi, r13
+    call u64__print
+    rodata_cstring .s3, `\`\n`
+    mov rdi, .s3
+    call cstring__print
+    mov rdi, -1
+    int3
+    ud2

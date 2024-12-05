@@ -1,7 +1,6 @@
 ; INPUT:
 ; * rdi: Array<qword>
 section .text
-global printqwordarray
 printqwordarray:
     push rbp
     mov rbp, rsp
