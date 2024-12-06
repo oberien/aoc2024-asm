@@ -122,13 +122,6 @@ main:
     lea rdi, [lines]
     call Array__println
 
-    lea rsi, [tmparray]
-    lea rdi, [lines]
-    call Array__clone_into
-
-    lea rdi, [tmparray]
-    call Array__println
-
     lea rdi, [lines]
     call part1
 
@@ -159,7 +152,8 @@ part1:
     push r13
     push r14
     push r15
-    mov ptr, [rdi + Array.ptr]
+    mov lines, rdi
+    mov ptr, [lines + Array.ptr]
 
     rodata_cstring .part1, `part1: `
     mov rdi, .part1
@@ -200,56 +194,80 @@ section .text
 test_array_safe_part1:
     push rbp
     mov rbp, rsp
+    %define asc rbp - Array_size
+    %define desc rbp - Array_size - Array_size
+    sub rsp, Array_size + Array_size
     %define array r12
-    %define direction r13
-    %define index r14
-    %define ptr r15
-    push r12
-    push r13
-    push r14
-    push r15
+    %define index r13
+    %define ptr r14
+    multipush r12, r13, r14
     mov array, rdi
-    mov ptr, [array + Array.ptr]
 
     ; arrays with 0 or 1 element are ignored
     cmp qword [array + Array.len], 1
     jbe .unsafe
 
+    ; check if all elements are ascending
+    mov rdi, array
+    lea rsi, [asc]
+    call Array__clone_into
+    lea rdi, [asc]
+    call Array__sort
+    mov rdi, array
+    lea rsi, [asc]
+    call Array__cmp
+    je .all_inc_or_dec
+
+    ; check if all elements are descending
+    mov rdi, array
+    lea rsi, [desc]
+    call Array__clone_into
+    lea rdi, [desc]
+    call Array__sort_desc
+    mov rdi, array
+    lea rsi, [desc]
+    call Array__cmp
+    je .all_inc_or_dec
+    jmp .unsafe
+
+    .all_inc_or_dec:
+    ; check if 0 < diff <= 3
     mov index, 0
+    mov ptr, [asc + Array.ptr]
     .loop:
-        mov rsi, [array + Array.len]
+        mov rsi, [asc + Array.len]
         dec rsi
         cmp index, rsi
         jae .safe
 
         mov rdi, [ptr]
         mov rsi, [ptr + 8]
-        cmp rdi, rsi
-        ja .above
-        je .equal
-        jb .below
-        ud2
-
-        .above:
-        .equal:
-        .below:
+        sub rsi, rdi
+        cmp rsi, 0
+        jbe .unsafe
+        cmp rsi, 3
+        ja .unsafe
 
         inc index
         add ptr, 8
         jmp .loop
 
     .safe:
+    dbg `safe: `
+    mov rdi, array
+    call Array__println
     mov rax, 1
     jmp .end
 
     .unsafe:
+    dbg `unsafe: `
+    mov rdi, array
+    call Array__println
     mov rax, 0
     jmp .end
 
     .end:
-    pop r15
-    pop r14
-    pop r13
-    pop r12
+    multipop r12, r13, r14
+    mov rsp, rbp
     pop rbp
     ret

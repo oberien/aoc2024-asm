@@ -42,7 +42,7 @@ memcmp_with_lens:
     %define buffer2_len r15
     multipush r12, r13, r14, r15
     mov buffer1, rdi
-    mov buffer1_len, rdi
+    mov buffer1_len, rsi
     mov buffer2, rdx
     mov buffer2_len, rcx
 

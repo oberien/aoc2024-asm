@@ -7,7 +7,7 @@ endstruc
 
 ; doesn't modify any registers
 %macro String__check_rtti 0
-    cmp qword [rdi], String_Rtti
+    cmp qword [rdi + String.rtti], String_Rtti
     je %%end
     panic `String operation called without a String`
     %%end:

@@ -8,7 +8,7 @@ endstruc
 
 ; doesn't modify any registers
 %macro Array__check_rtti 0
-    cmp qword [rdi], Array_Rtti
+    cmp qword [rdi + Array.rtti], Array_Rtti
     je %%end
     panic `Array operation called without a Array`
     %%end:
@@ -269,17 +269,42 @@ Array__cmp:
     push rbp
     mov rbp, rsp
     Array__check_rtti
-    %define this r8
-    %define other r9
+    %define this r12
+    %define other r13
+    %define compare r14
+    %define size r15
+    %define len rbx
+    multipush r12, r13, r14, r15, rbx
     mov this, rdi
-    mov other, r9
+    mov other, rsi
+
+    mov rax, [this + Array.element_rtti]
+    mov rdx, [other + Array.element_rtti]
+
+
+    mov rax, [rax + Rtti.is_primitive]
+    test rax, rax
+    jz .not_primitive
 
     mov rdi, [this + Array.ptr]
     mov rsi, [this + Array.len]
     mov rdx, [other + Array.ptr]
     mov rcx, [other + Array.len]
     call memcmp_with_lens
+    jmp .end
 
+    .not_primitive:
+    mov size, [rax + Rtti.size]
+    mov compare, [rax + Rtti.cmp]
+    mov len, [this + Array.len]
+    min len, [other + Array.len]
+    ; `this` and `other` are now ptr
+    mov this, [this + Array.ptr]
+
+
+
+    .end:
+    multipop r12, r13, r14, r15, rbx
     pop rbp
     ret
 

@@ -5,7 +5,7 @@ endstruc
 
 ; doesn't modify any registers
 %macro File__check_rtti 0
-    cmp qword [rdi], File_Rtti
+    cmp qword [rdi + File.rtti], File_Rtti
     je %%end
     panic `File operation called without a File`
     %%end:
