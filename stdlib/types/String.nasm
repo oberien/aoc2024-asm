@@ -77,12 +77,12 @@ String__count_lines:
     String__check_rtti
     %define string rdi
 
-    mov rsi, [string+8]
-    mov rdi, [string]
+    mov rsi, [string + String.len]
+    mov rdi, [string + String.ptr]
 
     ; number of newlines + 1
     mov rax, 1
-    xor rcx, rcx
+    xor ecx, ecx
     .loop:
         cmp rcx, rsi
         jge .end
@@ -94,6 +94,14 @@ String__count_lines:
         jmp .loop
 
     .end:
+    pop rbp
+    ret
+
+section .text
+String__extract_value:
+    push rbp
+    mov rbp, rsp
+    mov rax, rdi
     pop rbp
     ret
 
@@ -119,20 +127,21 @@ String__println:
     ret
 
 section .text
-String__equals:
-    push rbp
-    mov rbp, rsp
-    String__check_rtti
-    ud2 ; TODO
-    pop rbp
-    ret
-
-section .text
 String__cmp:
     push rbp
     mov rbp, rsp
     String__check_rtti
-    ud2 ; TODO
+    %define this r8
+    %define other r9
+    mov this, rdi
+    mov other, rsi
+
+    mov rdi, [this + String.ptr]
+    mov rsi, [this + String.len]
+    mov rdx, [other + String.ptr]
+    mov rcx, [other + String.len]
+    call memcmp_with_lens
+
     pop rbp
     ret
 

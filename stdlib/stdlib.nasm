@@ -1,3 +1,8 @@
+; simple helper macros
+%include "macros/rodata_cstring.nasm"
+%include "macros/min_max.nasm"
+%include "macros/multi_push_pop.nasm"
+
 ; syscalls
 %include "syscalls/handleerror.nasm" ; helper
 %include "syscalls/read.nasm" ; 0
@@ -10,12 +15,11 @@
 %include "syscalls/exit.nasm" ; 60
 
 ; syscall wrappers / helpers
-%include "rodata_cstring.nasm"
 %include "read_all.nasm"
 %include "write_all.nasm"
 %include "panic.nasm"
 %include "malloc.nasm"
-%include "memcpy.nasm"
+%include "mem.nasm"
 %include "print_newline.nasm"
 %include "assert.nasm"
 %include "parse.nasm"
@@ -33,4 +37,30 @@ gen_Rtti File
 %include "types/Array.nasm"
 gen_Rtti Array
 
-;%include "sortqwordarray.nasm"
+section .text
+global _start
+_start:
+    push rbp
+    mov rbp, rsp
+    %define args rbp - Array_size
+    %define argc r12
+    %define argv r13
+    sub rsp, Array_size
+
+    ; create Array<cstring> from arguments
+    mov argc, [rbp + 0x8]
+    lea argv, [rbp + 0x10]
+    mov qword [args + Array.rtti], Array_Rtti
+    mov qword [args + Array.element_rtti], Array_Rtti
+    mov qword [args + Array.ptr], argv
+    mov qword [args + Array.len], argc
+    mov qword [args + Array.capacity], argc
+
+    lea rdi, [args]
+    call main
+
+    mov rdi, rax
+    call syscall_exit
+
+    ; no stack cleanup needed
+    ; we are using the ultimate garbage collector -- the kernel

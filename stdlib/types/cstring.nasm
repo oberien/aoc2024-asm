@@ -27,6 +27,14 @@ cstring__len:
     ret
 
 section .text
+cstring__extract_value:
+    push rbp
+    mov rbp, rsp
+    mov rax, [rdi]
+    pop rbp
+    ret
+
+section .text
 cstring__print:
     push rbp
     mov rbp, rsp
@@ -53,18 +61,32 @@ cstring__println:
     ret
 
 section .text
-cstring__equals:
-    push rbp
-    mov rbp, rsp
-    ud2 ; TODO
-    pop rbp
-    ret
-
-section .text
 cstring__cmp:
     push rbp
     mov rbp, rsp
-    ud2 ; TODO
+    %define this r12
+    %define other r13
+    %define this_len r14
+    %define other_len r15
+    multipush r12, r13, r14, r15
+    mov this, rdi
+    mov other, rsi
+
+    mov rdi, this
+    call cstring__len
+    mov this_len, rax
+
+    mov rdi, other
+    call cstring__len
+    mov other_len, rax
+
+    mov rdi, this
+    mov rsi, this_len
+    mov rdx, other
+    mov rcx, other_len
+    call memcmp_with_lens
+
+    multipop r12, r13, r14, r15
     pop rbp
     ret
 

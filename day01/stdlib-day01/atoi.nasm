@@ -14,7 +14,7 @@ atoi:
     %define ptr rdx
     mov ptr, [string]
 
-    xor rax, rax
+    xor eax, eax
     .loop:
         cmp index, [string+0x8]
         jge .end

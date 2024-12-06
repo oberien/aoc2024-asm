@@ -142,6 +142,14 @@ File__seek:
     ret
 
 section .text
+File__extract_value:
+    push rbp
+    mov rbp, rsp
+    mov rax, rdi
+    pop rbp
+    ret
+
+section .text
 File__print:
     push rbp
     mov rbp, rsp
@@ -169,7 +177,6 @@ File__println:
     pop rbp
     ret
 
-File__equals equ 0
 File__cmp equ 0
 
 section .text

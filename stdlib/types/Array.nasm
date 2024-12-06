@@ -63,10 +63,153 @@ Array__push_u64:
 
     .next:
     mov rcx, [rdi + Array.len]
+    inc qword [rdi + Array.len]
     mov rdi, [rdi + Array.ptr]
     mov [rdi + rcx * 8], rsi
-    add qword [rdi + Array.len], 1
 
+    pop rbp
+    ret
+
+; INPUT:
+; * rdi: this-ptr
+; * rsi: pointer to element to push
+section .text
+Array__push:
+    push rbp
+    mov rbp, rsp
+    Array__check_rtti
+
+    mov r8, [rdi + Array.len]
+    mov rcx, r8
+    add rcx, 1
+    cmp rcx, [rdi + Array.capacity]
+    jbe .next
+    panic `Array__push not enough capacity`
+
+    .next:
+    inc qword [rdi + Array.len]
+
+    mov rdx, [rdi + Array.element_rtti]
+    mov rdx, [rdx + Rtti.size]
+    imul r8, rdx
+    mov rdi, [rdi + Array.ptr]
+    lea rdi, [rdi + r8]
+    call memcpy
+
+    pop rbp
+    ret
+
+; INPUT:
+; * rdi: this-ptr
+section .text
+Array__sort:
+    push rbp
+    mov rbp, rsp
+    mov rsi, 1
+    call Array__sort_direction
+    pop rbp
+    ret
+; INPUT:
+; * rdi: this-ptr
+section .text
+Array__sort_desc:
+    push rbp
+    mov rbp, rsp
+    mov rsi, -1
+    call Array__sort_direction
+    pop rbp
+    ret
+
+; INPUT:
+; * rdi: this-ptr
+; * rsi: direction (-1 descending, 1 ascending)
+section .text
+Array__sort_direction:
+    push rbp
+    mov rbp, rsp
+    %define this r12
+    %define endindex r13
+    %define index r14
+    %define tmp r15
+    %define direction rbx
+    multipush r12, r13, r14, r15, rbx
+    mov this, rdi
+    mov endindex, [this + Array.len]
+    mov direction, rsi
+
+    ; bubblesort
+    .loop:
+        ; check if we are done
+        cmp endindex, 1
+        jbe .end
+        mov index, 0
+        .loop2:
+            ; check if we reached the end (+1 because we compare current with next)
+            lea rdi, [index + 1]
+            cmp rdi, endindex
+            jae .loop2end
+            ; read current
+            mov rax, [this + Array.element_rtti]
+            mov rax, [rax + Rtti.size]
+            mov rdi, [this + Array.ptr]
+            imul rax, index
+            add rdi, rax
+            mov rax, [this + Array.element_rtti]
+            mov rax, [rax + Rtti.extract_value]
+            call rax
+            mov tmp, rax
+
+            ; read next
+            mov rax, [this + Array.element_rtti]
+            mov rax, [rax + Rtti.size]
+            mov rdi, [this + Array.ptr]
+            add rdi, rax ; one element further
+            imul rax, index
+            add rdi, rax
+            mov rax, [this + Array.element_rtti]
+            mov rax, [rax + Rtti.extract_value]
+            call rax
+
+            ; compare
+            mov rdi, tmp
+            mov rsi, rax
+            mov rax, [this + Array.element_rtti]
+            mov rax, [rax + Rtti.cmp]
+            call rax
+            ; check if the comparison matches the requested direction
+            mov rax, 1
+            mov rcx, -1
+            cmovg rax, rcx
+            cmp direction, rax
+            je .loop2cont
+            ; swap
+            mov rdx, [this + Array.element_rtti]
+            mov rdx, [rdx + Rtti.size]
+            mov rcx, rdx
+            imul rcx, index
+            mov rdi, [this + Array.ptr]
+            add rdi, rcx
+            mov rsi, rdi
+            add rsi, rdx
+            call memxchg
+
+            .loop2cont:
+            inc index
+            jmp .loop2
+        .loop2end:
+        dec endindex
+        jmp .loop
+
+    .end:
+    multipop r12, r13, r14, r15, rbx
+    pop rbp
+    ret
+
+section .text
+Array__extract_value:
+    push rbp
+    mov rbp, rsp
+    mov rax, rdi
     pop rbp
     ret
 
@@ -97,6 +240,10 @@ Array__print:
         test len_left, len_left
         jz .end
         mov rdi, ptr
+        mov rax, [rtti + Rtti.extract_value]
+        call rax
+
+        mov rdi, rax
         mov rax, [rtti + Rtti.print]
         call rax
 
@@ -129,20 +276,21 @@ Array__println:
     ret
 
 section .text
-Array__equals:
-    push rbp
-    mov rbp, rsp
-    Array__check_rtti
-    ud2 ; TODO
-    pop rbp
-    ret
-
-section .text
 Array__cmp:
     push rbp
     mov rbp, rsp
     Array__check_rtti
-    ud2 ; TODO
+    %define this r8
+    %define other r9
+    mov this, rdi
+    mov other, r9
+
+    mov rdi, [this + Array.ptr]
+    mov rsi, [this + Array.len]
+    mov rdx, [other + Array.ptr]
+    mov rcx, [other + Array.len]
+    call memcmp_with_lens
+
     pop rbp
     ret
 

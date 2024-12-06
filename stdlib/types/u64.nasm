@@ -4,6 +4,14 @@
 u64_size equ 8
 
 section .text
+u64__extract_value:
+    push rbp
+    mov rbp, rsp
+    mov rax, [rdi]
+    pop rbp
+    ret
+
+section .text
 u64__print:
     push rbp
     mov rbp, rsp
@@ -109,18 +117,10 @@ u64__printhexln:
     ret
 
 section .text
-u64__equals:
-    push rbp
-    mov rbp, rsp
-    ud2 ; TODO
-    pop rbp
-    ret
-
-section .text
 u64__cmp:
     push rbp
     mov rbp, rsp
-    ud2 ; TODO
+    cmp rdi, rsi
     pop rbp
     ret
 

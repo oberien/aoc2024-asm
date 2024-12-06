@@ -10,6 +10,9 @@
 ; * rsi: len
 section .text
 _panic:
+    push rbp
+    mov rbp, rsp
+
     mov rdx, rsi
     mov rsi, rdi
     mov rdi, STDERR

@@ -12,8 +12,8 @@ strlines:
     mov rsi, [string+8]
     mov rdi, [string]
 
-    xor rax, rax
-    xor rcx, rcx
+    xor eax, eax
+    xor ecx, ecx
     .loop:
         cmp rcx, rsi
         jge .end
