@@ -122,6 +122,13 @@ main:
     lea rdi, [lines]
     call Array__println
 
+    lea rsi, [tmparray]
+    lea rdi, [lines]
+    call Array__clone_into
+
+    lea rdi, [tmparray]
+    call Array__println
+
     lea rdi, [lines]
     call part1
 

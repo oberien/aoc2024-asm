@@ -43,7 +43,7 @@ free:
     call cstring__print
     mov rdi, r12
     call u64__printhexln
-    panic `aborting\n`
+    panic `aborting`
 
     .next:
     add rsi, 8

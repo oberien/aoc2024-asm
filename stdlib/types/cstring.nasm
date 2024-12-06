@@ -3,6 +3,7 @@
 ; cstring is a pointer to a nul-terminated string
 
 cstring_size equ 8
+cstring__is_primitive equ 1
 
 ; keyword for searching: strlen
 ; OUTPUT:
@@ -23,14 +24,6 @@ cstring__len:
     dec rdi
     mov rax, rdi
 
-    pop rbp
-    ret
-
-section .text
-cstring__extract_value:
-    push rbp
-    mov rbp, rsp
-    mov rax, [rdi]
     pop rbp
     ret
 
@@ -89,6 +82,12 @@ cstring__cmp:
     multipop r12, r13, r14, r15
     pop rbp
     ret
+
+section .text
+cstring__clone_into:
+    push rbp
+    mov rbp, rsp
+    panic `clone_into not implemented for cstring`
 
 section .text
 cstring__destroy:

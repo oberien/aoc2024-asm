@@ -2,14 +2,7 @@
 ; u64 doesn't contain the Rtti itself
 
 u64_size equ 8
-
-section .text
-u64__extract_value:
-    push rbp
-    mov rbp, rsp
-    mov rax, [rdi]
-    pop rbp
-    ret
+u64__is_primitive equ 1
 
 section .text
 u64__print:
@@ -123,6 +116,12 @@ u64__cmp:
     cmp rdi, rsi
     pop rbp
     ret
+
+section .text
+u64__clone_into:
+    push rbp
+    mov rbp, rsp
+    panic `clone_into not implemented for u64`
 
 section .text
 u64__destroy:

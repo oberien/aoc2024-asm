@@ -141,13 +141,7 @@ File__seek:
     pop rbp
     ret
 
-section .text
-File__extract_value:
-    push rbp
-    mov rbp, rsp
-    mov rax, rdi
-    pop rbp
-    ret
+File__is_primitive equ 0
 
 section .text
 File__print:
@@ -177,7 +171,21 @@ File__println:
     pop rbp
     ret
 
-File__cmp equ 0
+section .text
+File__cmp:
+    push rbp
+    mov rbp, rsp
+    panic `File is not comparible`
+
+section .text
+File__clone_into:
+    push rbp
+    mov rbp, rsp
+    mov qword [rsi + File.rtti], File_Rtti
+    mov rdx, [rdi + File.fd]
+    mov [rsi + File.fd], rdx
+    pop rbp
+    ret
 
 section .text
 File__destroy:

@@ -97,13 +97,7 @@ String__count_lines:
     pop rbp
     ret
 
-section .text
-String__extract_value:
-    push rbp
-    mov rbp, rsp
-    mov rax, rdi
-    pop rbp
-    ret
+String__is_primitive equ 0
 
 section .text
 String__print:
@@ -142,6 +136,32 @@ String__cmp:
     mov rcx, [other + String.len]
     call memcmp_with_lens
 
+    pop rbp
+    ret
+
+section .text
+String__clone_into:
+    push rbp
+    mov rbp, rsp
+    %define this r12
+    %define other r13
+    multipush r12, r13
+    mov this, rdi
+    mov other, rsi
+
+    mov rdi, other
+    mov rsi, [this + String.capacity]
+    call String__with_capacity
+
+    mov rdi, [other + String.ptr]
+    mov rsi, [this + String.ptr]
+    mov rdx, [this + String.len]
+    call memcpy
+
+    mov rdi, [this + String.len]
+    mov [other + String.len], rdi
+
+    multipop r12, r13
     pop rbp
     ret
 

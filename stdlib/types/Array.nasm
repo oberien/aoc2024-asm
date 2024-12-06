@@ -130,10 +130,11 @@ Array__sort_direction:
     %define this r12
     %define endindex r13
     %define index r14
-    %define tmp r15
+    %define rtti r15
     %define direction rbx
     multipush r12, r13, r14, r15, rbx
     mov this, rdi
+    mov rtti, [this + Array.element_rtti]
     mov endindex, [this + Array.len]
     mov direction, rsi
 
@@ -149,32 +150,26 @@ Array__sort_direction:
             cmp rdi, endindex
             jae .loop2end
             ; read current
-            mov rax, [this + Array.element_rtti]
-            mov rax, [rax + Rtti.size]
+            mov rax, [rtti + Rtti.size]
             mov rdi, [this + Array.ptr]
             imul rax, index
             add rdi, rax
-            mov rax, [this + Array.element_rtti]
-            mov rax, [rax + Rtti.extract_value]
-            call rax
-            mov tmp, rax
+            mov rax, [rtti + Rtti.is_primitive]
+            test rax, rax
+            cmovnz rdi, [rdi]
 
             ; read next
-            mov rax, [this + Array.element_rtti]
-            mov rax, [rax + Rtti.size]
-            mov rdi, [this + Array.ptr]
-            add rdi, rax ; one element further
+            mov rax, [rtti + Rtti.size]
+            mov rsi, [this + Array.ptr]
+            add rsi, rax ; one element further
             imul rax, index
-            add rdi, rax
-            mov rax, [this + Array.element_rtti]
-            mov rax, [rax + Rtti.extract_value]
-            call rax
+            add rsi, rax
+            mov rax, [rtti + Rtti.is_primitive]
+            test rax, rax
+            cmovnz rsi, [rsi]
 
             ; compare
-            mov rdi, tmp
-            mov rsi, rax
-            mov rax, [this + Array.element_rtti]
-            mov rax, [rax + Rtti.cmp]
+            mov rax, [rtti + Rtti.cmp]
             call rax
             ; check if the comparison matches the requested direction
             mov rax, 1
@@ -205,13 +200,7 @@ Array__sort_direction:
     pop rbp
     ret
 
-section .text
-Array__extract_value:
-    push rbp
-    mov rbp, rsp
-    mov rax, rdi
-    pop rbp
-    ret
+Array__is_primitive equ 0
 
 section .text
 Array__print:
@@ -240,10 +229,10 @@ Array__print:
         test len_left, len_left
         jz .end
         mov rdi, ptr
-        mov rax, [rtti + Rtti.extract_value]
-        call rax
+        mov rax, [rtti + Rtti.is_primitive]
+        test rax, rax
+        cmovnz rdi, [rdi]
 
-        mov rdi, rax
         mov rax, [rtti + Rtti.print]
         call rax
 
@@ -291,6 +280,62 @@ Array__cmp:
     mov rcx, [other + Array.len]
     call memcmp_with_lens
 
+    pop rbp
+    ret
+
+section .text
+Array__clone_into:
+    push rbp
+    mov rbp, rsp
+    %define ptr r12
+    %define other_ptr r13
+    %define len r14
+    %define size r15
+    %define clone_into rbx
+    multipush r12, r13, r14, r15, rbx
+    push rsi
+    mov ptr, [rdi + Array.ptr]
+    mov len, [rdi + Array.len]
+    mov rsi, [rdi + Array.element_rtti]
+    mov size, [rsi + Rtti.size]
+    mov clone_into, [rsi + Rtti.clone_into]
+    mov rax, [rsi + Rtti.is_primitive]
+    push rax
+
+    mov rdx, [rdi + Array.capacity]
+    mov rdi, [rsp + 0x8]
+    call Array__with_capacity
+    pop rax
+    pop rsi
+    mov other_ptr, [rsi + Array.ptr]
+    mov [rsi + Array.len], len
+
+    test rax, rax
+    jz .non_primitive
+
+    ; primitive -> memcpy
+    mov rdi, other_ptr
+    mov rsi, ptr
+    mov rdx, len
+    imul rdx, size
+    call memcpy
+    jmp .end
+
+    .non_primitive:
+        test len, len
+        jz .end
+
+        mov rdi, ptr
+        mov rsi, other_ptr
+        call clone_into
+
+        sub len, 1
+        add ptr, size
+        add other_ptr, size
+        jmp .non_primitive
+
+    .end:
+    multipop r12, r13, r14, r15, rbx
     pop rbp
     ret
 
