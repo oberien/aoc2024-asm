@@ -15,54 +15,6 @@ main:
     push r13
     mov args, rdi
 
-    ; Hello World
-
-    lea rdi, [string]
-    mov rsi, 1337
-    call String__with_capacity
-
-    rodata_cstring .s, `Hello, World!`
-    lea rdi, [string]
-    mov rsi, .s
-    mov rdx, .s_len
-    call String__append_raw
-
-    lea rdi, [string]
-    call String__println
-
-    lea rdi, [string]
-    call String__destroy
-
-    ; Test Array<u64>
-    lea rdi, [tmparray]
-    mov rsi, u64_Rtti
-    mov rdx, 10
-    call Array__with_capacity
-
-    lea rdi, [tmparray]
-    mov rsi, 1337
-    call Array__push_u64
-
-    lea rdi, [tmparray]
-    mov rsi, 42
-    call Array__push_u64
-
-    lea rdi, [tmparray]
-    call Array__println
-
-    lea rdi, [tmparray]
-    call Array__sort
-    lea rdi, [tmparray]
-    call Array__println
-
-    lea rdi, [tmparray]
-    call Array__sort_desc
-    lea rdi, [tmparray]
-    call Array__println
-
-    lea rdi, [tmparray]
-    call Array__destroy
-
     ; read file passed as argument
 
     cmp qword [args + Array.len], 2
