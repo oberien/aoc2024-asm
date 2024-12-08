@@ -200,6 +200,77 @@ Array__sort_direction:
     pop rbp
     ret
 
+; INPUT:
+; * rdi: this-ptr
+; * rsi: index
+; OUTPUT:
+; * rax: element
+section .text
+Array__get:
+    push rbp
+    mov rbp, rsp
+    Array__check_rtti
+    %define this rdi
+
+    cmp rsi, [this + Array.len]
+    jb .next
+    panic `Array__get index out of bounds`
+
+    .next:
+    mov rax, [this + Array.rtti]
+    mov rcx, [rax + Rtti.is_primitive]
+    mov rax, [rax + Rtti.size]
+    imul rax, rsi
+    add rax, [this + Array.ptr]
+    test rcx, rcx
+    cmova rax, [rax]
+
+    pop rbp
+    ret
+
+; INPUT:
+; * rdi: this-ptr
+section .text
+Array__remove:
+    push rbp
+    mov rbp, rsp
+    Array__check_rtti
+    %define this r12
+    %define element_ptr r13
+    %define element_rtti r14
+    multipush r12, r13, r14
+    mov this, rdi
+    mov element_rtti, [this + Array.element_rtti]
+
+    mov element_ptr, [this + Array.ptr]
+    imul rsi, [element_rtti + Rtti.size]
+    add element_ptr, rsi
+
+    mov rax, [element_rtti + Rtti.is_primitive]
+    test rax, rax
+    ja .shift_rest
+
+    ; destroy
+    mov rax, [element_rtti + Rtti.destroy]
+    mov rdi, element_ptr
+    call rax
+
+    .shift_rest:
+    mov rdi, element_ptr
+    mov rsi, element_ptr
+    add rsi, [element_rtti + Rtti.size]
+    mov rdx, [this + Array.len]
+    imul rdx, [element_rtti + Rtti.size]
+    add rdx, [this + Array.ptr]
+    sub rdx, rsi
+    call memcpy
+
+    sub qword [this + Array.len], 1
+
+    multipop r12, r13, r14
+    pop rbp
+    ret
+
 Array__is_primitive equ 0
 
 section .text

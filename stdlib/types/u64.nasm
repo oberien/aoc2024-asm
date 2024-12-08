@@ -121,9 +121,10 @@ section .text
 u64__clone_into:
     push rbp
     mov rbp, rsp
-    panic `clone_into not implemented for u64`
+    panic `clone_into not applicable for u64`
 
 section .text
 u64__destroy:
-    ; noop
-    ret
+    push rbp
+    mov rbp, rsp
+    panic `destroy not applicable for u64`

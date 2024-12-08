@@ -125,6 +125,9 @@ main:
     lea rdi, [lines]
     call part1
 
+    lea rdi, [lines]
+    call part2
+
 
 
     .end:
@@ -144,20 +147,36 @@ section .text
 part1:
     push rbp
     mov rbp, rsp
-    %define lines r12
-    %define index r13
-    %define count r14
-    %define ptr r15
-    push r12
-    push r13
-    push r14
-    push r15
-    mov lines, rdi
-    mov ptr, [lines + Array.ptr]
+
+    call count_safe
+    push rax
 
     rodata_cstring .part1, `part1: `
     mov rdi, .part1
     call cstring__print
+
+    pop rax
+    mov rdi, rax
+    call u64__println
+
+    pop rbp
+    ret
+
+; INPUT:
+; * rdi: Array<Array<u64>>
+; OUTPUT:
+; * rax: number of safe lists
+section .text
+count_safe:
+    push rbp
+    mov rbp, rsp
+    %define lines r12
+    %define index r13
+    %define count r14
+    %define ptr r15
+    multipush r12, r13, r14, r15
+    mov lines, rdi
+    mov ptr, [lines + Array.ptr]
 
     mov index, 0
     mov count, 0
@@ -166,7 +185,7 @@ part1:
         jae .end
 
         mov rdi, ptr
-        call test_array_safe_part1
+        call test_array_safe
         add count, rax
 
         inc index
@@ -176,13 +195,97 @@ part1:
         jmp .loop
 
     .end:
+    mov rax, count
+    multipop r12, r13, r14, r15
+    pop rbp
+    ret
+
+; INPUT:
+; * rdi: Array<Array<u64>>
+section .text
+part2:
+    push rbp
+    mov rbp, rsp
+    %define this r12
+    %define index r13
+    %define len r15
+    %define count rbx
+    multipush r12, r13, r14, r15, rbx
+    mov this, rdi
+    mov index, 0
+    mov len, [this + Array.len]
+
+    .loop:
+        cmp index, len
+        jae .end
+
+        mov rdi, this
+        mov rsi, index
+        call Array__get
+        mov rdi, rax
+        call test_array_safe_part2
+        add count, rax
+
+        inc index
+        jmp .loop
+
+    .end:
+    rodata_cstring .part2, `part2: `
+    mov rdi, .part2
+    call cstring__print
+
     mov rdi, count
     call u64__println
 
-    pop r15
-    pop r14
-    pop r13
-    pop r12
+    multipop r12, r13, r14, r15, rbx
+    pop rbp
+    ret
+
+; INPUT:
+; * rdi: Array<u64>
+; OUTPUT:
+; * rax: safe=1 unsafe=0
+section .text
+test_array_safe_part2:
+    push rbp
+    mov rbp, rsp
+    %define clone rbp - Array_size
+    sub rsp, Array_size
+    %define this r12
+    %define index r13
+    multipush r12, r13
+    mov this, rdi
+    mov index, 0
+
+    .loop:
+        cmp index, [this + Array.len]
+        jae .unsafe
+
+        mov rdi, this
+        lea rsi, [clone]
+        call Array__clone_into
+
+        lea rdi, [clone]
+        mov rsi, index
+        call Array__remove
+
+        lea rdi, [clone]
+        call test_array_safe
+        test rax, rax
+        ja .safe
+        inc index
+        jmp .loop
+
+    .unsafe:
+    mov rax, 0
+    jmp .end
+    .safe:
+    mov rax, 1
+    jmp .end
+
+    .end:
+    multipop r12, r13
+    mov rsp, rbp
     pop rbp
     ret
 
@@ -191,7 +294,7 @@ part1:
 ; OUTPUT:
 ; * rax: 1 if the passed array is safe, 0 otherwise
 section .text
-test_array_safe_part1:
+test_array_safe:
     push rbp
     mov rbp, rsp
     %define asc rbp - Array_size
@@ -231,26 +334,10 @@ test_array_safe_part1:
     jmp .unsafe
 
     .all_inc_or_dec:
-    ; check if 0 < diff <= 3
-    mov index, 0
-    mov ptr, [asc + Array.ptr]
-    .loop:
-        mov rsi, [asc + Array.len]
-        dec rsi
-        cmp index, rsi
-        jae .safe
-
-        mov rdi, [ptr]
-        mov rsi, [ptr + 8]
-        sub rsi, rdi
-        cmp rsi, 0
-        jbe .unsafe
-        cmp rsi, 3
-        ja .unsafe
-
-        inc index
-        add ptr, 8
-        jmp .loop
+    lea rdi, [asc]
+    call check_deltas
+    test rax, rax
+    jz .unsafe
 
     .safe:
     dbg `safe: `
@@ -269,5 +356,50 @@ test_array_safe_part1:
     .end:
     multipop r12, r13, r14
     mov rsp, rbp
+    pop rbp
+    ret
+
+; INPUT:
+; * rdi: asc Array<u64>
+; OUTPUT:
+; * rax: safe=1, unsafe=0
+section .text
+check_deltas:
+    push rbp
+    mov rbp, rsp
+    %define asc rdi
+    %define len rsi
+    %define ptr rdx
+    %define index rcx
+    mov len, [asc + Array.len]
+
+    mov index, 0
+    mov ptr, [asc + Array.ptr]
+    .loop:
+        mov r8, [asc + Array.len]
+        dec r8
+        cmp index, r8
+        jae .safe
+
+        ; check if 0 < diff <= 3
+        mov r8, [ptr]
+        mov r9, [ptr + 8]
+        sub r9, r8
+        cmp r9, 0
+        jbe .unsafe
+        cmp r9, 3
+        ja .unsafe
+
+        inc index
+        add ptr, 8
+        jmp .loop
+
+    .safe:
+    mov rax, 1
+    jmp .end
+    .unsafe:
+    mov rax, 0
+
+    .end:
     pop rbp
     ret

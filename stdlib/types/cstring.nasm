@@ -87,9 +87,10 @@ section .text
 cstring__clone_into:
     push rbp
     mov rbp, rsp
-    panic `clone_into not implemented for cstring`
+    panic `clone_into not applicable for cstring`
 
 section .text
 cstring__destroy:
-    ; noop
-    ret
+    push rbp
+    mov rbp, rsp
+    panic `destroy not applicable for cstring`
