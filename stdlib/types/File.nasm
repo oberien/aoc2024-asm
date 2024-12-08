@@ -3,14 +3,6 @@ struc File
     .fd: resq 1
 endstruc
 
-; doesn't modify any registers
-%macro File__check_rtti 0
-    cmp qword [rdi + File.rtti], File_Rtti
-    je %%end
-    panic `File operation called without a File`
-    %%end:
-%endmacro
-
 ; INPUT:
 ; * rdi: (out) this-pointer
 ; * rsi: cstring filename
@@ -42,7 +34,7 @@ section .text
 File__len:
     push rbp
     mov rbp, rsp
-    File__check_rtti
+    check_rtti rdi, File
     %define this r12
     %define current r13
     %define len r14
@@ -88,7 +80,7 @@ section .text
 File__read_to_string:
     push rbp
     mov rbp, rsp
-    File__check_rtti
+    check_rtti rdi, File
     %define this r12
     %define string r13
     %define to_read r14
@@ -133,7 +125,7 @@ section .text
 File__seek:
     push rbp
     mov rbp, rsp
-    File__check_rtti
+    check_rtti rdi, File
 
     mov rdi, [rdi + File.fd]
     call syscall_lseek
@@ -147,7 +139,7 @@ section .text
 File__print:
     push rbp
     mov rbp, rsp
-    File__check_rtti
+    check_rtti rdi, File
     %define this r12
     push r12
     mov this, rdi
@@ -175,12 +167,13 @@ section .text
 File__cmp:
     push rbp
     mov rbp, rsp
-    panic `File is not comparible`
+    panic `File is not comparable`
 
 section .text
 File__clone_into:
     push rbp
     mov rbp, rsp
+    check_rtti rdi, File
     mov qword [rsi + File.rtti], File_Rtti
     mov rdx, [rdi + File.fd]
     mov [rsi + File.fd], rdx
@@ -191,7 +184,7 @@ section .text
 File__destroy:
     push rbp
     mov rbp, rsp
-    File__check_rtti
+    check_rtti rdi, File
     mov rdi, [rdi + File.fd]
     call syscall_close
     pop rbp

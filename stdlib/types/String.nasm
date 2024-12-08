@@ -5,14 +5,6 @@ struc String
     .capacity: resq 1
 endstruc
 
-; doesn't modify any registers
-%macro String__check_rtti 0
-    cmp qword [rdi + String.rtti], String_Rtti
-    je %%end
-    panic `String operation called without a String`
-    %%end:
-%endmacro
-
 ; INPUT:
 ; * rdi: (out) this-pointer
 ; * rsi: capacity
@@ -47,7 +39,7 @@ section .text
 String__append_raw:
     push rbp
     mov rbp, rsp
-    String__check_rtti
+    check_rtti rdi, String
 
     mov rcx, [rdi + String.len]
     add rcx, rdx
@@ -74,7 +66,7 @@ section .text
 String__count_lines:
     push rbp
     mov rbp, rsp
-    String__check_rtti
+    check_rtti rdi, String
     %define string rdi
 
     mov rsi, [string + String.len]
@@ -103,7 +95,7 @@ section .text
 String__print:
     push rbp
     mov rbp, rsp
-    String__check_rtti
+    check_rtti rdi, String
     mov rsi, [rdi + String.ptr]
     mov rdx, [rdi + String.len]
     mov rdi, STDOUT
@@ -124,7 +116,8 @@ section .text
 String__cmp:
     push rbp
     mov rbp, rsp
-    String__check_rtti
+    check_rtti rdi, String
+    check_rtti rsi, String
     %define this r8
     %define other r9
     mov this, rdi
@@ -143,6 +136,7 @@ section .text
 String__clone_into:
     push rbp
     mov rbp, rsp
+    check_rtti rdi, String
     %define this r12
     %define other r13
     multipush r12, r13
@@ -169,7 +163,7 @@ section .text
 String__destroy:
     push rbp
     mov rbp, rsp
-    String__check_rtti
+    check_rtti rdi, String
     mov rsi, [rdi + String.capacity]
     mov rdi, [rdi + String.ptr]
     call free

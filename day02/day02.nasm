@@ -129,6 +129,8 @@ count_safe:
     multipush r12, r13, r14, r15
     mov lines, rdi
     mov ptr, [lines + Array.ptr]
+    check_rtti rdi, Array
+    check_rtti ptr, Array
 
     mov index, 0
     mov count, 0
@@ -166,6 +168,9 @@ part2:
     mov this, rdi
     mov index, 0
     mov len, [this + Array.len]
+    check_rtti this, Array
+    mov rdi, [this + Array.ptr]
+    check_rtti rdi, Array
 
     .loop:
         cmp index, len

@@ -6,14 +6,6 @@ struc Array
     .capacity: resq 1
 endstruc
 
-; doesn't modify any registers
-%macro Array__check_rtti 0
-    cmp qword [rdi + Array.rtti], Array_Rtti
-    je %%end
-    panic `Array operation called without a Array`
-    %%end:
-%endmacro
-
 ; INPUT:
 ; * rdi: (out) this-pointer
 ; * rsi: element RTTI
@@ -52,7 +44,7 @@ section .text
 Array__push_u64:
     push rbp
     mov rbp, rsp
-    Array__check_rtti
+    check_rtti rdi, Array
     assert_eq [rdi + Array.element_rtti], u64_Rtti
 
     mov rcx, [rdi + Array.len]
@@ -77,7 +69,7 @@ section .text
 Array__push:
     push rbp
     mov rbp, rsp
-    Array__check_rtti
+    check_rtti rdi, Array
 
     mov r8, [rdi + Array.len]
     mov rcx, r8
@@ -127,6 +119,7 @@ section .text
 Array__sort_direction:
     push rbp
     mov rbp, rsp
+    check_rtti rdi, Array
     %define this r12
     %define endindex r13
     %define index r14
@@ -209,7 +202,7 @@ section .text
 Array__get:
     push rbp
     mov rbp, rsp
-    Array__check_rtti
+    check_rtti rdi, Array
     %define this rdi
 
     cmp rsi, [this + Array.len]
@@ -234,7 +227,7 @@ section .text
 Array__remove:
     push rbp
     mov rbp, rsp
-    Array__check_rtti
+    check_rtti rdi, Array
     %define this r12
     %define element_ptr r13
     %define element_rtti r14
@@ -277,7 +270,7 @@ section .text
 Array__print:
     push rbp
     mov rbp, rsp
-    Array__check_rtti
+    check_rtti rdi, Array
     %define this r12
     %define len_left r13
     %define rtti r14
@@ -339,7 +332,8 @@ section .text
 Array__cmp:
     push rbp
     mov rbp, rsp
-    Array__check_rtti
+    check_rtti rdi, Array
+    check_rtti rsi, Array
     %define this r12
     %define other r13
     %define compare r14
@@ -439,7 +433,7 @@ section .text
 Array__destroy:
     push rbp
     mov rbp, rsp
-    Array__check_rtti
+    check_rtti rdi, Array
     mov rsi, [rdi + Array.element_rtti]
     mov rsi, [rsi + Rtti.size]
     imul rsi, [rdi + Array.capacity]
