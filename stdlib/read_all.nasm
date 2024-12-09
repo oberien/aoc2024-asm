@@ -21,10 +21,7 @@ read_all:
     mov len, rdx
 
     .loop:
-        mov rdi, fd
-        mov rsi, buffer
-        mov rdx, left_to_read
-        call syscall_read
+        syscall_read(fd, buffer, left_to_read)
         sub left_to_read, rax
         add buffer, rax
         mov rdi, rax

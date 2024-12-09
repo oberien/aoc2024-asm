@@ -6,7 +6,7 @@
 
 
 fn main(this: Array):
-    
+
 endfn
 
 fn foo(_this: Array, _other: cstring, _next: String):

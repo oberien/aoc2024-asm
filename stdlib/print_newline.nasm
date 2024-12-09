@@ -4,10 +4,7 @@ print_newline:
     mov rbp, rsp
 
     rodata_cstring .ln, `\n`
-    mov rdi, STDOUT
-    mov rsi, .ln
-    mov rdx, 1
-    call syscall_write
+    syscall_write(STDOUT, .ln, 1)
 
     pop rbp
     ret

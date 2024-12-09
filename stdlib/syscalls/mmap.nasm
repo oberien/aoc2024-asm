@@ -12,6 +12,7 @@
 %define MAP_PRIVATE 0x02
 %define MAP_ANONYMOUS 0x20
 
+%define syscall_mmap(addr, length, prot, flags, fd, offset) syscall_6 syscall_mmap, addr, length, prot, flags, fd, offset
 section .text
 syscall_mmap:
     mov rax, 9

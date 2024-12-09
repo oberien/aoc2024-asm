@@ -61,8 +61,7 @@ _start:
     lea rdi, [args]
     call main
 
-    mov rdi, rax
-    call syscall_exit
+    syscall_exit(rax)
 
     ; no stack cleanup needed
     ; we are using the ultimate garbage collector -- the kernel

@@ -11,13 +11,7 @@ malloc:
     add rdi, 8
     mov length, rdi
 
-    mov rsi, length
-    mov rdi, 0
-    mov rdx, PROT_READ | PROT_WRITE
-    mov r10, MAP_ANONYMOUS | MAP_PRIVATE
-    mov r8, -1
-    mov r9, 0
-    call syscall_mmap
+    syscall_mmap(0, length, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)
 
     mov [rax], length
     add rax, 8
@@ -47,7 +41,7 @@ free:
 
     .next:
     add rsi, 8
-    call syscall_munmap
+    syscall_munmap(rdi, rsi)
 
     pop rbp
     ret

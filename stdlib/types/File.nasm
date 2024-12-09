@@ -14,10 +14,7 @@ File__open:
     push r12
     mov this, rdi
 
-    mov rdi, rsi
-    mov rsi, O_RDONLY
-    xor edx, edx
-    call syscall_open
+    syscall_open(rsi, O_RDONLY, 0)
     mov qword [this + File.rtti], File_Rtti
     mov [this + File.fd], rax
 
@@ -127,8 +124,7 @@ File__seek:
     mov rbp, rsp
     check_rtti rdi, File
 
-    mov rdi, [rdi + File.fd]
-    call syscall_lseek
+    syscall_lseek([rdi + File.fd], rsi, rdx)
 
     pop rbp
     ret
@@ -185,7 +181,6 @@ File__destroy:
     push rbp
     mov rbp, rsp
     check_rtti rdi, File
-    mov rdi, [rdi + File.fd]
-    call syscall_close
+    syscall_close([rdi + File.fd])
     pop rbp
     ret

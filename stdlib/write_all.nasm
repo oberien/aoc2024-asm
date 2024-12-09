@@ -17,10 +17,7 @@ write_all:
     mov len, rdx
 
     .loop:
-        mov rdi, fd
-        mov rsi, ptr
-        mov rdx, len
-        call syscall_write
+        syscall_write(fd, ptr, len)
         sub len, rax
         add ptr, rax
         test len, len
