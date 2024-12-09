@@ -1,4 +1,5 @@
 ; simple helper macros
+%include "macros/fn.nasm"
 %include "macros/rodata_cstring.nasm"
 %include "macros/dbg.nasm"
 %include "macros/min_max.nasm"
