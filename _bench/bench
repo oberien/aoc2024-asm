@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FILE="$1"
+
+nasm -f elf64 -g -F dwarf -o "$FILE".o "$FILE".nasm
+ld -o "$FILE" "$FILE".o
+strip -w -N '*.*' "$FILE"
+
+echo off | sudo tee /sys/devices/system/cpu/smt/control >/dev/null
+
+if [ `cat /sys/devices/system/cpu/smt/active` != 0 ]; then
+  echo "couldn't disable smt"
+  exit 1
+fi
+if [ -e perf_ctl.fifo ]; then
+  unlink perf_ctl.fifo
+fi
+mkfifo perf_ctl.fifo
+exec 5<>perf_ctl.fifo
+
+function run() {
+
+  for _ in `seq 10`; do
+    output=$(sudo perf stat --cpu=2 -e LD_BLOCKS.STORE_FORWARD,cpu_core/cycles/,UOPS_RETIRED.STALL_CYCLES --delay=-1 --control=fifo:perf_ctl.fifo taskset -c 2 ./"$FILE" 2>&1)
+    fwd=$(echo "$output" | grep "LD_BLOCKS.STORE_FORWARD" | awk '{ print $1 }')
+    retired=$(echo "$output" | grep "UOPS_RETIRED.STALL_CYCLES" | awk '{ print $1 }')
+    cycles=$(echo "$output" | grep "cpu_core/cycles/" | awk '{ print $1 }')
+    printf "%10d\t%15d\t%15d\n" "$fwd" "$retired" "$cycles"
+  done
+}
+
+printf "%10s\t%15s\t%15s\n" "store_fwd" "stall_cycles" "cycles"
+output=$(run)
+echo "$output" | sort
+
+echo on | sudo tee /sys/devices/system/cpu/smt/control >/dev/null
+if [ `cat /sys/devices/system/cpu/smt/active` != 1 ]; then
+  echo "couldn't enable smt"
+  exit 1
+fi
+exec 5>&-
+unlink perf_ctl.fifo
