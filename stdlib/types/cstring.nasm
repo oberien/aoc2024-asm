@@ -3,7 +3,6 @@
 ; cstring is a pointer to a nul-terminated string
 
 cstring_size equ 8
-cstring__is_primitive equ 1
 
 ; keyword for searching: strlen
 ; OUTPUT:

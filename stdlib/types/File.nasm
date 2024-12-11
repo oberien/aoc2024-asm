@@ -129,8 +129,6 @@ File__seek:
     pop rbp
     ret
 
-File__is_primitive equ 0
-
 section .text
 File__print:
     push rbp

@@ -1,24 +1,16 @@
 ; INPUT
 ; * rdi: number of bytes
-section .text
-malloc:
+fn malloc(num_bytes: u64):
     ; we store the allocated length at the beginning of
     ; the allocated page to be used for munmap /free
-    push rbp
-    mov rbp, rsp
-    push r12
-    %define length r12
-    add rdi, 8
-    mov length, rdi
+    add %$num_bytes, 8
 
-    syscall_mmap(0, length, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)
+    syscall_mmap(0, %$num_bytes, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)
 
-    mov [rax], length
+    mov rdi, %$num_bytes
+    mov [rax], rdi
     add rax, 8
-
-    pop r12
-    pop rbp
-    ret
+endfn
 
 ; INPUT:
 ; * rdi: ptr to free (must have been created via malloc)
@@ -66,30 +58,6 @@ brkmalloc:
     call handleerror
 
     mov rax, r12
-
-    pop r12
-    pop rbp
-    ret
-
-; INPUT:
-; * rdi: (out) Array<T> where sizeof(T) == rdx
-; * rsi: number of elements
-; * rdx: size of each element
-calloc:
-    push rbp
-    mov rbp, rsp
-    push r12
-    %define array r12
-    mov array, rdi
-
-    mov qword [array+0x8], 0
-    mov [array+0x10], rsi
-
-    mov r12, rdi
-    mov rdi, rsi
-    imul rdi, rdx
-    call malloc
-    mov [array], rax
 
     pop r12
     pop rbp

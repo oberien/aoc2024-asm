@@ -2,7 +2,6 @@
 ; u64 doesn't contain the Rtti itself
 
 u64_size equ 8
-u64__is_primitive equ 1
 
 section .text
 u64__print:

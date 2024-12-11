@@ -264,8 +264,6 @@ Array__remove:
     pop rbp
     ret
 
-Array__is_primitive equ 0
-
 section .text
 Array__print:
     push rbp

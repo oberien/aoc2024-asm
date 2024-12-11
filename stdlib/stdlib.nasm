@@ -1,6 +1,9 @@
 ; simple helper macros
+%include "macros/__is_primitive.nasm"
 %include "macros/fn.nasm"
 %include "macros/rodata_cstring.nasm"
+%include "macros/panic.nasm"
+%include "macros/check_rtti.nasm"
 %include "macros/dbg.nasm"
 %include "macros/min_max.nasm"
 %include "macros/multi_push_pop.nasm"
@@ -19,7 +22,6 @@
 ; syscall wrappers / helpers
 %include "read_all.nasm"
 %include "write_all.nasm"
-%include "panic.nasm"
 %include "malloc.nasm"
 %include "mem.nasm"
 %include "print_newline.nasm"

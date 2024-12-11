@@ -135,6 +135,7 @@
 %macro fn 1+
     %push
     %xdefine %$__regs_to_push ""
+    %xdefine %$__argsize 0
 
     %defstr input %1
     index_of input, '('
@@ -154,7 +155,7 @@
     ; parse args
     %assign num_args 0
     %xdefine args_with_comma ""
-    %rep 6
+    %rep 100
         strip_char args, ' '
         strip_char retval, ','
         strip_char retval, ' '
@@ -169,33 +170,52 @@
         %substr arg args 0,retval-1
         %substr args args retval+1,-1
         index_of arg, ':'
-        %substr arg_name arg 0,retval-1
-        %substr arg_type arg retval+1,-1
+        %substr arg_name_str arg 0,retval-1
+        %substr arg_type_str arg retval+1,-1
 
         ; strip whitespace off name and type
-        strip_char arg_name, ' '
-        %xdefine arg_name retval
-        strip_char arg_type, ' '
-        %xdefine arg_type retval
-        %strcat args_with_comma args_with_comma, ", ", arg_name
+        strip_char arg_name_str, ' '
+        %xdefine arg_name_str retval
+        strip_char arg_type_str, ' '
+        %xdefine arg_type_str retval
+        strip_char arg_type_str, '&'
+        %assign arg_type_is_ref arg_type_str != retval
+        %xdefine arg_type_str retval
+        strip_char arg_type_str, ' '
+        %xdefine arg_type_str retval
+        %strcat args_with_comma args_with_comma, ", ", arg_name_str
 
         ; get register
         [warning -other]
         %if regs == ""
         [warning +other]
             %error "only 0-6 arguments supported"
+            %exitrep
         %endif
         %substr reg regs 0,3
         %substr regs regs 4,-1
         %deftok reg reg
 
         ; define register for argument name
-        %strcat arg_name '%$', arg_name
+        %strcat arg_name '%$', arg_name_str
         %deftok arg_name arg_name
-        %xdefine %[arg_name] reg
-        %deftok arg_type arg_type
+        %xdefine %[arg_name] qword [rbp - (%$__argsize) - 8]
+        push reg
+        %assign %$__argsize %$__argsize + 8
+        %deftok arg_type arg_type_str
         ; insert `check_rtti` if needed
-        check_rtti reg, arg_type
+        %if arg_type %+ __is_primitive == 0
+            %if !arg_type_is_ref
+                %strcat error_msg "Argument `", arg_name_str, "` must be a reference: `&", arg_type_str, "`"
+                %error error_msg
+            %endif
+            check_rtti reg, arg_type
+        %else
+            %if arg_type_is_ref
+                %strcat error_msg "Argument `", arg_name_str, "` must not be a reference: `", arg_type_str, "`"
+                %error error_msg
+            %endif
+        %endif
     %endrep
 
     strip_char args_with_comma, ','
@@ -204,6 +224,8 @@
     %xdefine %[name](%[args_with_comma]) call_%[num_args] %[name], %[args_with_comma]
 
 
+    %undef error_msg
+    %undef arg_type_is_ref
     %undef args_with_comma
     %undef reg
     %undef regs
@@ -211,7 +233,9 @@
     %undef args
     %undef arg
     %undef arg_name
+    %undef arg_name_str
     %undef arg_type
+    %undef arg_type_str
     %undef open
     %undef close
     %undef input
@@ -230,9 +254,15 @@
     %strcat name "%$", name
     %deftok name name
     %deftok type type
-    %xdefine %[name] rbp - (%[%$__localsize]) - %[type]_size
+    %xdefine addr rbp - (%[%$__argsize] + %[%$__localsize]) - %[type]_size
+    %if type %+ __is_primitive == 1
+        %xdefine %[name] qword [addr]
+    %else
+        %xdefine %[name] addr
+    %endif
     %xdefine %$__localsize %$__localsize + %[type]_size
 
+    %undef addr
     %undef type
     %undef name
     %undef input
@@ -291,7 +321,7 @@
 %macro endfn 0
     %defstr localsize_str %$__localsize
     [warning -other]
-    %if localsize_str != "0"
+    %if localsize_str != "0" || %$__argsize != 0
     [warning +other]
         mov rsp, rbp
     %endif

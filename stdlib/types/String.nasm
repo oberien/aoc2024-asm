@@ -20,7 +20,7 @@ String__with_capacity:
     mov capacity, rsi
 
     mov rdi, capacity
-    call malloc
+    malloc(capacity)
     mov qword [this + String.rtti], String_Rtti
     mov qword [this + String.ptr], rax
     mov qword [this + String.len], 0
@@ -88,8 +88,6 @@ String__count_lines:
     .end:
     pop rbp
     ret
-
-String__is_primitive equ 0
 
 section .text
 String__print:

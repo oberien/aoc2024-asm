@@ -4,9 +4,9 @@
 ; * rdx: mode
 ; OUTPUT:
 ; * rax: file descriptor
-%define O_RDONLY 0
-%define O_WRONLY 1
-%define O_RDWR 2
+O_RDONLY equ 0
+O_WRONLY equ 1
+O_RDWR equ 2
 
 %define syscall_open(filename, flags, mode) syscall_3 syscall_open, filename, flags, mode
 section .text
