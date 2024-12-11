@@ -20,14 +20,14 @@
 %include "syscalls/exit.nasm" ; 60
 
 ; syscall wrappers / helpers
-%include "read_all.nasm"
-%include "write_all.nasm"
-%include "malloc.nasm"
+%include "helpers/read_all.nasm"
+%include "helpers/write_all.nasm"
+%include "helpers/malloc.nasm"
 %undef ptr
-%include "mem.nasm"
-%include "print_newline.nasm"
-%include "assert.nasm"
-%include "parse.nasm"
+%include "helpers/mem.nasm"
+%include "helpers/print_newline.nasm"
+%include "helpers/assert.nasm"
+%include "helpers/parse.nasm"
 
 ; Data Types
 %include "types/Rtti.nasm"
