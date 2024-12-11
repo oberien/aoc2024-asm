@@ -187,10 +187,29 @@
         strip_char arg_type_str, ' '
         %xdefine arg_type_str retval
         strip_char arg_type_str, '&'
-        %assign arg_type_is_ref arg_type_str != retval
+        %ifidn arg_type_str, retval
+            %assign arg_type_is_ref 0
+        %else
+            %assign arg_type_is_ref 1
+        %endif
         %xdefine arg_type_str retval
         strip_char arg_type_str, ' '
         %xdefine arg_type_str retval
+        %ifdef arg_type_is_ref
+            %if arg_type_is_ref
+                %substr arg_type_is_out_ref arg_type_str 0,3
+                %ifidn arg_type_is_out_ref, "out"
+                    %assign arg_type_is_out_ref 1
+                    %substr arg_type_str arg_type_str 3+1,-1
+                    strip_char arg_type_str, ' '
+                    %xdefine arg_type_str retval
+                %else
+                    %assign arg_type_is_out_ref 0
+                %endif
+            %else
+                %assign arg_type_is_out_ref 0
+            %endif
+        %endif
         %strcat args_with_comma args_with_comma, ", ", arg_name_str
 
         ; get register
@@ -218,7 +237,9 @@
                     %strcat error_msg "Argument `", arg_name_str, "` must be a reference: `&", arg_type_str, "`"
                     %error error_msg
                 %endif
-                check_rtti reg, arg_type
+                %if !arg_type_is_out_ref
+                    check_rtti reg, arg_type
+                %endif
             %else
                 %if arg_type_is_ref
                     %strcat error_msg "Argument `", arg_name_str, "` must not be a reference: `", arg_type_str, "`"
@@ -235,6 +256,7 @@
 
     %undef error_msg
     %undef arg_type_is_ref
+    %undef arg_type_is_out_ref
     %undef args_with_comma
     %undef reg
     %undef regs
