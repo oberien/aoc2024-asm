@@ -23,7 +23,6 @@
 %include "helpers/read_all.nasm"
 %include "helpers/write_all.nasm"
 %include "helpers/malloc.nasm"
-%undef ptr
 %include "helpers/mem.nasm"
 %include "helpers/print_newline.nasm"
 %include "helpers/assert.nasm"

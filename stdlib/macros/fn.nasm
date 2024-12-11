@@ -84,7 +84,7 @@
     %assign i 0
     %rep len+1
         %substr to_test %1 i,needle_len
-        %if to_test == %2
+        %ifidn to_test, %2
             %exitrep
         %endif
         %assign i i+1
@@ -102,7 +102,7 @@
     %assign retval 0
     %rep len
         %substr char %1 retval,1
-        %if char != %2
+        %ifnidn char, %2
             %exitrep
         %endif
         %assign retval retval+1
@@ -191,9 +191,7 @@
         %strcat args_with_comma args_with_comma, ", ", arg_name_str
 
         ; get register
-        [warning -other]
-        %if regs == ""
-        [warning +other]
+        %ifidn regs, ""
             %error "only 0-6 arguments supported"
             %exitrep
         %endif
@@ -209,25 +207,27 @@
         %assign %$__argsize %$__argsize + 8
         %deftok arg_type arg_type_str
         ; insert `check_rtti` if needed
-        %if arg_type %+ __is_primitive == 0
-            %if !arg_type_is_ref
-                %strcat error_msg "Argument `", arg_name_str, "` must be a reference: `&", arg_type_str, "`"
-                %error error_msg
-            %endif
-            check_rtti reg, arg_type
-        %else
-            %if arg_type_is_ref
-                %strcat error_msg "Argument `", arg_name_str, "` must not be a reference: `", arg_type_str, "`"
-                %error error_msg
+        ; The preprocessor doesn't care that we hit %exitrep before.
+        ; It still insists that arg_type must exist here.
+        %ifdef arg_type
+            %if arg_type %+ __is_primitive == 0
+                %if !arg_type_is_ref
+                    %strcat error_msg "Argument `", arg_name_str, "` must be a reference: `&", arg_type_str, "`"
+                    %error error_msg
+                %endif
+                check_rtti reg, arg_type
+            %else
+                %if arg_type_is_ref
+                    %strcat error_msg "Argument `", arg_name_str, "` must not be a reference: `", arg_type_str, "`"
+                    %error error_msg
+                %endif
             %endif
         %endif
     %endrep
 
     strip_char args_with_comma, ','
     %deftok args_with_comma retval
-;    _define: %[name](%[args_with_comma]) call_%[num_args] %[name], %[args_with_comma]
     %xdefine %[name](%[args_with_comma]) call_%[num_args] %[name], %[args_with_comma]
-
 
     %undef error_msg
     %undef arg_type_is_ref
@@ -275,9 +275,7 @@
 
 %macro reg 1+
     %defstr input %1
-    [warning -other]
-    %if %$__regs == ""
-    [warning +other]
+    %ifidn %$__regs, ""
         %error "Only 5 local registers allowed"
     %endif
     %substr reg %$__regs 0,3
@@ -310,12 +308,10 @@
 
 %macro endvars 0
     %defstr localsize_str %$__localsize
-    %if localsize_str != "0"
+    %ifnidn localsize_str, "0"
         sub rsp, %$__localsize
     %endif
-    [warning -other]
-    %if %$__regs_to_push != ""
-    [warning +other]
+    %ifnidn %$__regs_to_push, ""
         strip_char %$__regs_to_push, ','
         %xdefine %$__regs_to_push retval
         %deftok regs_to_push_tok %$__regs_to_push
@@ -329,16 +325,14 @@
 
 %macro endfn 0
     %defstr localsize_str %$__localsize
-    [warning -other]
-    %if %$__regs_to_push != ""
-    [warning +other]
+    %ifnidn %$__regs_to_push, ""
         %deftok regs_to_push_tok %$__regs_to_push
         multipop regs_to_push_tok
     %endif
 
-    [warning -other]
-    %if localsize_str != "0" || %$__argsize != 0
-    [warning +other]
+    %ifnidn localsize_str, "0"
+        mov rsp, rbp
+    %elif %$__argsize != 0
         mov rsp, rbp
     %endif
 
