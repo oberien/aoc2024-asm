@@ -322,7 +322,7 @@ Array__println:
     push rbp
     mov rbp, rsp
     call Array__print
-    call print_newline
+    print_newline()
     pop rbp
     ret
 

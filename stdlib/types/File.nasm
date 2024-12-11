@@ -153,7 +153,7 @@ File__println:
     push rbp
     mov rbp, rsp
     call File__print
-    call print_newline
+    print_newline()
     pop rbp
     ret
 

@@ -38,6 +38,9 @@
     call %1
 %endmacro
 
+%macro call_0 1
+    call %1
+%endmacro
 %macro call_1 2
     mov rdi, %2
     call %1
@@ -225,9 +228,10 @@
         %endif
     %endrep
 
+    %deftok args_with_comma_leading args_with_comma
     strip_char args_with_comma, ','
     %deftok args_with_comma retval
-    %xdefine %[name](%[args_with_comma]) call_%[num_args] %[name], %[args_with_comma]
+    %xdefine %[name](%[args_with_comma]) call_%[num_args] %[name] %[args_with_comma_leading]
 
     %undef error_msg
     %undef arg_type_is_ref

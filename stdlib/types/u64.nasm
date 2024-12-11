@@ -95,7 +95,7 @@ u64__println:
     push rbp
     mov rbp, rsp
     call u64__print
-    call print_newline
+    print_newline()
     pop rbp
     ret
 
@@ -104,7 +104,7 @@ u64__printhexln:
     push rbp
     mov rbp, rsp
     call u64__printhex
-    call print_newline
+    print_newline()
     pop rbp
     ret
 

@@ -48,7 +48,7 @@ cstring__println:
     push rbp
     mov rbp, rsp
     call cstring__print
-    call print_newline
+    print_newline()
     pop rbp
     ret
 
