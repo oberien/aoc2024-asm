@@ -23,6 +23,7 @@
 %include "read_all.nasm"
 %include "write_all.nasm"
 %include "malloc.nasm"
+%undef ptr
 %include "mem.nasm"
 %include "print_newline.nasm"
 %include "assert.nasm"
@@ -34,6 +35,9 @@
 gen_Rtti String
 %include "types/u64.nasm"
 gen_Rtti u64
+%undef ptr
+%include "types/ptr.nasm"
+gen_Rtti ptr
 %include "types/cstring.nasm"
 gen_Rtti cstring
 %include "types/File.nasm"

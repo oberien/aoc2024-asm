@@ -132,6 +132,11 @@
     %undef input
 %endmacro
 
+; stored non-volatile registers == %$__regs_to_push
+; locals == %$__localsize
+; pushed arguments == %$__argsize
+; return address <- ebp
+
 %macro fn 1+
     %push
     %xdefine %$__regs_to_push ""
@@ -304,7 +309,10 @@
 %endmacro
 
 %macro endvars 0
-    sub rsp, %$__localsize
+    %defstr localsize_str %$__localsize
+    %if localsize_str != "0"
+        sub rsp, %$__localsize
+    %endif
     [warning -other]
     %if %$__regs_to_push != ""
     [warning +other]
@@ -314,6 +322,7 @@
         multipush regs_to_push_tok
     %endif
 
+    %undef localsize_str
     %undef regs_to_push_tok
     %undef reglen
 %endmacro
@@ -321,15 +330,16 @@
 %macro endfn 0
     %defstr localsize_str %$__localsize
     [warning -other]
-    %if localsize_str != "0" || %$__argsize != 0
-    [warning +other]
-        mov rsp, rbp
-    %endif
-    [warning -other]
     %if %$__regs_to_push != ""
     [warning +other]
         %deftok regs_to_push_tok %$__regs_to_push
         multipop regs_to_push_tok
+    %endif
+
+    [warning -other]
+    %if localsize_str != "0" || %$__argsize != 0
+    [warning +other]
+        mov rsp, rbp
     %endif
 
     pop rbp

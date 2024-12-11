@@ -1,5 +1,7 @@
-; INPUT
+; INPUT:
 ; * rdi: number of bytes
+; OUTPUT:
+; * rax: ptr
 fn malloc(num_bytes: u64):
     ; we store the allocated length at the beginning of
     ; the allocated page to be used for munmap /free

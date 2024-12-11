@@ -52,7 +52,7 @@ String__append_raw:
     sub rcx, rdx
     mov rdi, [rdi + String.ptr]
     add rdi, rcx
-    call memcpy
+    memcpy(rdi, rsi, rdx)
 
     pop rbp
     ret
@@ -125,7 +125,7 @@ String__cmp:
     mov rsi, [this + String.len]
     mov rdx, [other + String.ptr]
     mov rcx, [other + String.len]
-    call memcmp_with_lens
+    memcmp_with_lens(rdi, rsi, rdx, rcx)
 
     pop rbp
     ret
@@ -148,7 +148,7 @@ String__clone_into:
     mov rdi, [other + String.ptr]
     mov rsi, [this + String.ptr]
     mov rdx, [this + String.len]
-    call memcpy
+    memcpy(rdi, rsi, rdx)
 
     mov rdi, [this + String.len]
     mov [other + String.len], rdi

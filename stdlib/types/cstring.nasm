@@ -76,7 +76,7 @@ cstring__cmp:
     mov rsi, this_len
     mov rdx, other
     mov rcx, other_len
-    call memcmp_with_lens
+    memcmp_with_lens(rdi, rsi, rdx, rcx)
 
     multipop r12, r13, r14, r15
     pop rbp

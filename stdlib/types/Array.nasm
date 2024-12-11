@@ -86,7 +86,7 @@ Array__push:
     imul r8, rdx
     mov rdi, [rdi + Array.ptr]
     lea rdi, [rdi + r8]
-    call memcpy
+    memcpy(rdi, rsi, rdx)
 
     pop rbp
     ret
@@ -180,6 +180,7 @@ Array__sort_direction:
             mov rsi, rdi
             add rsi, rdx
             call memxchg
+;            memxchg(rdi, rsi, rdx)
 
             .loop2cont:
             inc index
@@ -256,7 +257,7 @@ Array__remove:
     imul rdx, [element_rtti + Rtti.size]
     add rdx, [this + Array.ptr]
     sub rdx, rsi
-    call memcpy
+    memcpy(rdi, rsi, rdx)
 
     sub qword [this + Array.len], 1
 
@@ -353,7 +354,7 @@ Array__cmp:
     mov rsi, [this + Array.len]
     mov rdx, [other + Array.ptr]
     mov rcx, [other + Array.len]
-    call memcmp_with_lens
+    memcmp_with_lens(rdi, rsi, rdx, rcx)
     jmp .end
 
     .not_primitive:
@@ -406,7 +407,7 @@ Array__clone_into:
     mov rsi, ptr
     mov rdx, len
     imul rdx, size
-    call memcpy
+    memcpy(rdi, rsi, rdx)
     jmp .end
 
     .non_primitive:
