@@ -54,7 +54,7 @@ main:
         lea rdi, [string]
         mov rsi, index
         lea rdx, [tmparray]
-        call parse_line_as_u64_array
+        parse_line_as_u64_array(rdi, rsi, rdx)
         cmp index, rsi
         je .part1
         mov index, rsi

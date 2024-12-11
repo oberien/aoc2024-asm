@@ -5,21 +5,23 @@
 ; * rdi: String-ptr
 ; * rsi: new index after number
 ; * rax: u64 number
-section .text
-atoi:
-    push rbp
-    mov rbp, rsp
-    %define string rdi
-    %define index rsi
-    %define ptr rdx
-    mov ptr, [string + String.ptr]
+fn atoi(string: &String, _index: u64):
+    vars
+        reg ptr: ptr
+        reg len: u64
+        reg index: u64
+    endvars
+    mov rdi, %$string
+    mov %$ptr, [rdi + String.ptr]
+    mov %$len, [rdi + String.len]
+    mov %$index, %$_index
 
     xor eax, eax
     .loop:
-        cmp index, [string + String.len]
+        cmp %$index, %$len
         jae .end
         xor ecx, ecx
-        mov cl, [ptr+index]
+        mov cl, [%$ptr + %$index]
         cmp cl, `0`
         jb .end
         cmp cl, `9`
@@ -27,12 +29,13 @@ atoi:
         imul rax, 10
         sub cl, `0`
         add rax, rcx
-        inc index
+        inc %$index
         jmp .loop
 
     .end:
-    pop rbp
-    ret
+    mov rdi, %$string
+    mov rsi, %$index
+endfn
 
 ; INPUT:
 ; * rdi: String-ptr
@@ -41,41 +44,44 @@ atoi:
 ; * rdi: String-ptr (not clobbered)
 ; * rsi: index after whitespace
 ; * rax: number of newline characters skipped
-section .text
-skip_whitespace:
-    push rbp
-    mov rbp, rsp
-    %define string rdi
-    %define index rsi
-    %define ptr rdx
-    mov ptr, [string + String.ptr]
-    xor eax, eax
+fn skip_whitespace(string: &String, index: u64):
+    vars
+        reg ptr: ptr
+        reg len: u64
+    endvars
+    mov rdi, %$string
+    mov %$ptr, [rdi + String.ptr]
+    mov %$len, [rdi + String.len]
 
+    xor eax, eax
     .loop:
-        cmp index, [string + String.len]
+        cmp %$index, %$len
+        mov rdi, %$index
+        mov dl, byte [%$ptr + rdi]
         jae .end
-        cmp byte [ptr + index], ` `
+        cmp dl, ` `
         je .continue
-        cmp byte [ptr + index], `\t`
+        cmp dl, `\t`
         je .continue
-        cmp byte [ptr + index], `\r`
+        cmp dl, `\r`
         je .continue
-        cmp byte [ptr + index], `\n`
+        cmp dl, `\n`
         je .line
-        cmp byte [ptr + index], `\v`
+        cmp dl, `\v`
         je .continue
-        cmp byte [ptr + index], `\f`
+        cmp dl, `\f`
         je .continue
         jmp .end
         .line:
         inc rax
         .continue:
-        inc index
+        inc %$index
         jmp .loop
 
     .end:
-    pop rbp
-    ret
+    mov rdi, %$string
+    mov rsi, %$index
+endfn
 
 ; INPUT:
 ; * rdi: String-ptr
@@ -84,45 +90,33 @@ skip_whitespace:
 ; OUTPUT:
 ; * rdi: String-ptr (not clobbered)
 ; * rsi: index after the line
-section .text
-parse_line_as_u64_array:
-    push rbp
-    mov rbp, rsp
-    %define string r12
-    %define index r13
-    %define array r14
-    push r12
-    push r13
-    push r14
-    mov string, rdi
-    mov index, rsi
-    mov array, rdx
+fn parse_line_as_u64_array(_string: &String, _index: u64, out_array: &Array):
+    vars
+        reg string: ptr
+        reg index: u64
+    endvars
+    mov %$string, %$_string
+    mov %$index, %$_index
 
     .loop:
-        cmp index, [string + String.len]
+        cmp %$index, [%$string + String.len]
         jae .end
 
-        mov rdi, string
-        mov rsi, index
-        call skip_whitespace
-        mov index, rsi
+        skip_whitespace(%$string, %$index)
+        mov %$index, rsi
         test rax, rax
         jnz .end
 
-        call atoi
-        mov index, rsi
+        atoi(%$string, %$index)
+        mov %$index, rsi
 
-        mov rdi, array
+        mov rdi, %$out_array
         mov rsi, rax
         call Array__push_u64
 
         jmp .loop
 
     .end:
-    mov rdi, string
-    mov rsi, index
-    pop r14
-    pop r13
-    pop r12
-    pop rbp
-    ret
+    mov rdi, %$string
+    mov rsi, %$index
+endfn
