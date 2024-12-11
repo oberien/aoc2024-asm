@@ -164,6 +164,6 @@ String__destroy:
     check_rtti rdi, String
     mov rsi, [rdi + String.capacity]
     mov rdi, [rdi + String.ptr]
-    call free
+    free(rdi, rsi)
     pop rbp
     ret

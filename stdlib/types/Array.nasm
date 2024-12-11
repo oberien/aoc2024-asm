@@ -27,7 +27,7 @@ Array__with_capacity:
     mov rdi, capacity
     imul rdi, [rsi + Rtti.size]
 
-    call malloc
+    malloc(rdi)
     mov qword [this + Array.ptr], rax
     mov qword [this + Array.len], 0
     mov qword [this + Array.capacity], capacity
@@ -436,6 +436,6 @@ Array__destroy:
     mov rsi, [rsi + Rtti.size]
     imul rsi, [rdi + Array.capacity]
     mov rdi, [rdi + Array.ptr]
-    call free
+    free(rdi, rsi)
     pop rbp
     ret

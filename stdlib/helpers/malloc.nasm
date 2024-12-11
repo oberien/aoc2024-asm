@@ -17,50 +17,43 @@ endfn
 ; INPUT:
 ; * rdi: ptr to free (must have been created via malloc)
 ; * rsi: length of the allocation as requested to malloc
-section .text
-free:
-    push rbp
-    mov rbp, rsp
-
-    sub rdi, 8
-    test rdi, 0x0fff
+fn free(ptr: ptr, len: u64):
+    sub %$ptr, 8
+    test %$ptr, 0x0fff
     jz .next
-    mov r12, rdi
     rodata_cstring .err, `free called with non-aligned pointer: `
     mov rdi, .err
     call cstring__print
-    mov rdi, r12
+    mov rdi, %$ptr
     call u64__printhexln
     panic `aborting`
 
     .next:
-    add rsi, 8
-    syscall_munmap(rdi, rsi)
+    add %$len, 8
+    syscall_munmap(%$ptr, %$len)
+endfn
 
-    pop rbp
-    ret
-
-extern _end
-section .data
-    brk_val: dq _end
-
-brkmalloc:
-    push rbp
-    mov rbp, rsp
-    push r12
-
-    mov r12, [brk_val]
-
-    add rdi, [brk_val]
-    add rdi, 4095
-    and rdi, 0xffffffffffffe000
-    mov [brk_val], rdi
-    mov rax, 12
-    syscall
-    call handleerror
-
-    mov rax, r12
-
-    pop r12
-    pop rbp
-    ret
+;extern _end
+;section .data
+;    brk_val: dq _end
+;
+;brkmalloc:
+;    push rbp
+;    mov rbp, rsp
+;    push r12
+;
+;    mov r12, [brk_val]
+;
+;    add rdi, [brk_val]
+;    add rdi, 4095
+;    and rdi, 0xffffffffffffe000
+;    mov [brk_val], rdi
+;    mov rax, 12
+;    syscall
+;    call handleerror
+;
+;    mov rax, r12
+;
+;    pop r12
+;    pop rbp
+;    ret
