@@ -97,7 +97,7 @@ String__print:
     mov rsi, [rdi + String.ptr]
     mov rdx, [rdi + String.len]
     mov rdi, STDOUT
-    call write_all
+    write_all(rdi, rsi, rdx)
     pop rbp
     ret
 

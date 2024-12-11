@@ -37,7 +37,7 @@ cstring__print:
     mov rdi, STDOUT
     mov rsi, r12
     mov rdx, rax
-    call write_all
+    write_all(rdi, rsi, rdx)
 
     pop r12
     pop rbp

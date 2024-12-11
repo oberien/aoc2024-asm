@@ -59,7 +59,7 @@ u64__print_radix:
     mov rdi, STDOUT
     mov rsi, rcx
     mov rdx, r8
-    call write_all
+    write_all(rdi, rsi, rdx)
 
     ; convert
 
@@ -81,7 +81,7 @@ u64__print_radix:
     lea rsi, [content + rdi]
     mov rdi, STDOUT
     mov rdx, len
-    call write_all
+    write_all(rdi, rsi, rdx)
 
     pop r14
     pop r13
