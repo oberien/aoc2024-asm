@@ -179,8 +179,7 @@ Array__sort_direction:
             add rdi, rcx
             mov rsi, rdi
             add rsi, rdx
-            call memxchg
-;            memxchg(rdi, rsi, rdx)
+            memxchg(rdi, rsi, rdx)
 
             .loop2cont:
             inc index

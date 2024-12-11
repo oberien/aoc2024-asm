@@ -101,7 +101,7 @@ File__read_to_string:
     mov rdi, [this + File.fd]
     mov rsi, [string + String.ptr]
     mov rdx, to_read
-    call read_all
+    read_all(rdi, rsi, rdx)
     assert_eq rax, to_read
 
     mov [string + String.len], to_read
