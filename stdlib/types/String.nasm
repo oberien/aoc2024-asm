@@ -81,14 +81,7 @@ fn String__cmp(this: String = rdi, other: String = rsi):
     memcmp_with_lens(rdi, rsi, rdx, rcx)
 endfn
 
-fn String__clone_into(_this: String = rdi, _other: out String = rsi):
-    vars
-        reg this: ptr
-        reg other: ptr
-    endvars
-    mov %$this, %$_this
-    mov %$other, %$_other
-
+fn String__clone_into(this: String = reg, other: out String = reg):
     String__with_capacity(%$other, [%$this + String.capacity])
     memcpy([%$other + String.ptr], [%$this + String.ptr], [%$this + String.len])
 

@@ -3,33 +3,6 @@
 
 u64_size equ 8
 
-section .text
-u64__print:
-    push rbp
-    mov rbp, rsp
-    rodata_cstring .decbytes, `0123456789`
-    mov rsi, 10
-    mov rdx, .decbytes
-    mov rcx, 0
-    mov r8, 0
-    call u64__print_radix
-    pop rbp
-    ret
-
-section .text
-u64__printhex:
-    push rbp
-    mov rbp, rsp
-    rodata_cstring .hexprefix, `0x`
-    rodata_cstring .hexbytes, `0123456789abcdef`
-    mov rsi, 16
-    mov rdx, .hexbytes
-    mov rcx, .hexprefix
-    mov r8, 2
-    call u64__print_radix
-    pop rbp
-    ret
-
 ; INPUT:
 ; * rdi: u64
 ; * rsi: radix
@@ -89,6 +62,26 @@ u64__print_radix:
     mov rsp, rbp
     pop rbp
     ret
+
+
+fn u64__print(this: u64 = rdi):
+    rodata_cstring .decbytes, `0123456789`
+    mov rsi, 10
+    mov rdx, .decbytes
+    mov rcx, 0
+    mov r8, 0
+    call u64__print_radix
+endfn
+
+fn u64__printhex(this: u64 = rdi)
+    rodata_cstring .hexprefix, `0x`
+    rodata_cstring .hexbytes, `0123456789abcdef`
+    mov rsi, 16
+    mov rdx, .hexbytes
+    mov rcx, .hexprefix
+    mov r8, 2
+    call u64__print_radix
+endfn
 
 section .text
 u64__println:

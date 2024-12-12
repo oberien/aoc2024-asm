@@ -137,6 +137,25 @@
     %pop
 %endmacro
 
+%macro string_to_instructions 1
+    %xdefine input %1
+    %strlen len input
+
+    %rep len
+        index_of input, `\n`
+        %substr instruction input 0,retval-1
+        %if retval == 0
+            %exitrep
+        %endif
+        %substr input input retval+1,-1
+        %deftok instruction instruction
+        instruction
+    %endrep
+
+    %undef instruction
+    %undef len
+    %undef input
+%endmacro
 
 %macro parse_arg 1
     ; <name>: [&[out]] <type> [= register]
@@ -152,7 +171,9 @@
     ; * arg_type_is_out: 1 if yes, 0 otherwise
     ; * arg_reg: register the argument is passed in
     ; * arg_reg_str: register the argument is passed in as string
-    ; * arg_is_in_register: if the argument should be referred to in the register or pushed to the stack
+    ; * arg_is_in_register: if the argument is referred to in a register (either nv-reg or arg-reg)
+    ; * arg_is_in_arg_register: if the argument should be referred to in its argument-register
+    ; * arg_is_in_nv_register: if the argument should be moved to a non-volatile register
 
     index_of %1, ':'
     %substr arg_name_str %1 0,retval-1
@@ -195,35 +216,50 @@
 
     ; check if the argument should stay in the register / the register should not be pushed
     %assign arg_is_in_register 0
+    %assign arg_is_in_arg_register 0
+    %assign arg_is_in_nv_register 0
     index_of arg_type_str, '='
     %strlen arg_type_str_len arg_type_str
     %if retval-1 != arg_type_str_len
-        %substr arg_is_in_register arg_type_str retval+1,-1
+        %assign arg_is_in_register 1
+
+        %substr arg_is_in_arg_register arg_type_str retval+1,-1
         %substr arg_type_str arg_type_str 0,retval-1
         strip_char_end arg_type_str, ' '
         %xdefine arg_type_str retval
 
-        strip_char arg_is_in_register, ' '
+        strip_char arg_is_in_arg_register, ' '
         strip_char_end retval, ' '
-        %xdefine arg_is_in_register retval
-        %ifnidn arg_is_in_register, arg_reg_str
-            %strcat error_msg "Argument `", arg_name_str, "` must be in register `", arg_reg_str, "` and not `", arg_is_in_register, "`"
-            %error error_msg
+        %xdefine arg_is_in_arg_register retval
+
+        %ifidn arg_is_in_arg_register, "reg"
+            %assign arg_is_in_arg_register 0
+            %assign arg_is_in_nv_register 1
+        %else
+            %ifnidn arg_is_in_arg_register, arg_reg_str
+                %strcat error_msg "Argument `", arg_name_str, "` must be in register `", arg_reg_str, "` and not `", arg_is_in_arg_register, "`"
+                %error error_msg
+            %endif
+            %assign arg_is_in_arg_register 1
+            %assign arg_is_in_nv_register 0
         %endif
-        %assign arg_is_in_register 1
     %endif
     %undef arg_type_str_len
 %endmacro
 
 ; stored non-volatile registers == %$__regs_to_push
 ; locals == %$__localsize
+; stored non-volatile registers for function-arguments == %$__arg_nvregs_to_pop
 ; pushed arguments == %$__argsize
 ; return address <- ebp
 
 %macro fn 1+
     %push
+    %xdefine %$__regs "r12r13r14r15rbx"
     %xdefine %$__regs_to_push ""
     %xdefine %$__argsize 0
+    %xdefine %$__arg_nvregs_to_pop ""
+    %xdefine %$__localsize 0
 
     %defstr input %1
     index_of input, '('
@@ -242,6 +278,7 @@
 
     ; parse args
     %assign num_args 0
+    %xdefine nv_arg_instructions ""
     %xdefine args_with_comma ""
     %rep 100
         strip_char args, ' '
@@ -263,24 +300,32 @@
         ; parse argument
 
         parse_arg arg
-        %strcat args_with_comma args_with_comma, ", ", arg_name_str
 
-        ; define register for argument name
-        %strcat arg_name '%$', arg_name_str
-        %deftok arg_name arg_name
-        %if arg_is_in_register == 0
-            %xdefine %[arg_name] qword [rbp - (%$__argsize) - 8]
-            push arg_reg
-            %assign %$__argsize %$__argsize + 8
-        %else
-            %xdefine %[arg_name] arg_reg
-        %endif
-
-        %deftok arg_type arg_type_str
         ; The preprocessor doesn't care that we hit %exitrep before.
-        ; It still insists that arg_type must exist here, even though we would
-        ; define it literally the line above.
-        %ifdef arg_type
+        ; It still insists that all variables must exist here.
+        %ifdef arg_name_str
+            %strcat args_with_comma args_with_comma, ", ", arg_name_str
+
+            ; define register for argument name
+            %strcat arg_name '%$', arg_name_str
+            %deftok arg_name arg_name
+            %if arg_is_in_arg_register
+                %xdefine %[arg_name] arg_reg
+            %elif arg_is_in_nv_register
+                %substr reg %$__regs 0,3
+                %substr %$__regs %$__regs 4,-1
+                %strcat %$__arg_nvregs_to_pop %$__arg_nvregs_to_pop, ", ", reg
+                %strcat nv_arg_instructions nv_arg_instructions, `push `, reg, `\nmov `, reg, `, `, arg_reg_str, `\n`
+                %xdefine %[arg_name] reg
+                %undef reg
+            %else
+                %xdefine %[arg_name] qword [rbp - (%$__argsize) - 8]
+                push arg_reg
+                %assign %$__argsize %$__argsize + 8
+            %endif
+
+            ; handle type shenanigans
+            %deftok arg_type arg_type_str
             %assign is_primitive arg_type %+ __is_primitive
 
 
@@ -306,15 +351,20 @@
         %endif
     %endrep
 
+    string_to_instructions nv_arg_instructions
+
     %deftok args_with_comma_leading args_with_comma
     strip_char args_with_comma, ','
     %deftok args_with_comma retval
     %xdefine %[name](%[args_with_comma]) call_%[num_args] %[name] %[args_with_comma_leading]
 
     %undef error_msg
+    %undef nv_arg_instructions
     %undef is_primitive
     %undef arg_type_is_ref
     %undef arg_type_is_out
+    %undef arg_is_in_arg_register
+    %undef arg_is_in_nv_register
     %undef args_with_comma
     %undef arg_reg
     %undef arg_reg_str
@@ -322,6 +372,7 @@
     %undef num_args
     %undef args
     %undef arg
+    %undef reg
     %undef arg_name
     %undef arg_name_str
     %undef arg_type
@@ -387,8 +438,6 @@
 %endmacro
 
 %macro vars 0
-    %xdefine %$__localsize 0
-    %xdefine %$__regs "r12r13r14r15rbx"
 %endmacro
 
 %macro endvars 0
@@ -403,27 +452,50 @@
         multipush regs_to_push_tok
     %endif
 
+
     %undef localsize_str
     %undef regs_to_push_tok
     %undef reglen
 %endmacro
 
 %macro endfn 0
-    %defstr localsize_str %$__localsize
+    ; pop non-volatile registers for vars
     %ifnidn %$__regs_to_push, ""
         %deftok regs_to_push_tok %$__regs_to_push
         multipop regs_to_push_tok
     %endif
 
+    %defstr localsize_str %$__localsize
+    %assign has_locals 0
     %ifnidn localsize_str, "0"
-        mov rsp, rbp
-    %elif %$__argsize != 0
+        %assign has_locals 1
+    %endif
+    %assign has_pushed_args %$__argsize != 0
+    %assign has_pushed_nvargregs 0
+    %ifnidn %$__arg_nvregs_to_pop, ""
+        %assign has_pushed_nvargregs 1
+    %endif
+
+    %if has_pushed_nvargregs
+        %if has_locals
+            add rsp, %$__localsize
+        %endif
+        strip_char %$__arg_nvregs_to_pop, ','
+        %deftok %$__arg_nvregs_to_pop retval
+        multipop %$__arg_nvregs_to_pop
+        %if has_pushed_args
+            mov rsp, rbp
+        %endif
+    %elif has_locals || has_pushed_args
         mov rsp, rbp
     %endif
 
     pop rbp
     ret
 
+    %undef has_locals
+    %undef has_pushed_args
+    %undef has_pushed_nvargregs
     %undef regs_to_push_tok
     %undef localsize_str
     %pop
