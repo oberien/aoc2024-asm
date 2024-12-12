@@ -17,18 +17,21 @@ endfn
 ; INPUT:
 ; * rdi: ptr to free (must have been created via malloc)
 ; * rsi: length of the allocation as requested to malloc
-fn free(ptr: ptr, len: u64):
+fn free(ptr: ptr = rdi, len: u64 = rsi):
     sub %$ptr, 8
     test %$ptr, 0x0fff
     jz .next
+
+    push %$ptr
     rodata_cstring .err, `free called with non-aligned pointer: `
     mov rdi, .err
     call cstring__print
-    mov rdi, %$ptr
+    pop %$ptr
     call u64__printhexln
     panic `aborting`
 
     .next:
+    ; info of the length
     add %$len, 8
     syscall_munmap(%$ptr, %$len)
 endfn

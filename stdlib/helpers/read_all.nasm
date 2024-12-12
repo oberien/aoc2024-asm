@@ -4,7 +4,7 @@
 ; * rdx: num bytes
 ; OUTPUT:
 ; * rax: number of bytes read
-fn read_all(fd: u64, _buffer: ptr, num_bytes: u64):
+fn read_all(fd: u64, _buffer: ptr = rdi, num_bytes: u64):
     vars
         reg buffer: ptr
         reg left_to_read: u64

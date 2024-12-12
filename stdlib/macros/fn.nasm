@@ -101,38 +101,122 @@
 %endmacro
 
 %macro strip_char 2
-    %strlen len %1
-    %assign retval 0
-    %rep len
-        %substr char %1 retval,1
-        %ifnidn char, %2
+    %push
+    %strlen %$len %1
+    %assign %$index 0
+
+    ; from the front
+    %rep %$len
+        %substr %$char %1 %$index,1
+        %ifnidn %$char, %2
             %exitrep
         %endif
-        %assign retval retval+1
+        %assign %$index %$index+1
     %endrep
-    %substr retval %1 retval,-1
-    %undef char
-    %undef len
+
+    %substr retval %1 %$index,-1
+    %pop
 %endmacro
 
-%macro string_to_instructions 1
-    %xdefine input %1
-    %strlen len input
+%macro strip_char_end 2
+    %push
+    %strlen %$len %1
+    %assign %$index %$len
 
-    %rep len
-        index_of input, `\n`
-        %substr instruction input 0,retval-1
-        %if retval == 0
+    ; from the end
+    %assign %$index %$len
+    %rep %$len
+        %substr %$char %1 %$index, 1
+        %ifnidn %$char, %2
             %exitrep
         %endif
-        %substr input input retval+1,-1
-        %deftok instruction instruction
-        instruction
+        %assign %$index %$index-1
     %endrep
 
-    %undef instruction
-    %undef len
-    %undef input
+    %substr retval %1 0,%$index
+    %pop
+%endmacro
+
+
+%macro parse_arg 1
+    ; <name>: [&[out]] <type> [= register]
+    ; `&` is only allowed for non-primitive types
+
+    ; requires the following variables to exist:
+    ; * arg_regs
+
+    ; defines the following names:
+    ; * arg_name_str
+    ; * arg_type_str
+    ; * arg_type_is_ref: 1 if yes, 0 otherwise
+    ; * arg_type_is_out_ref: 1 if yes, 0 otherwise
+    ; * arg_reg: register the argument is passed in
+    ; * arg_reg_str: register the argument is passed in as string
+    ; * arg_in_register: if the argument should be referred to in the register or pushed to the stack
+
+    index_of %1, ':'
+    %substr arg_name_str %1 0,retval-1
+    %substr arg_type_str %1 retval+1,-1
+
+    ; strip whitespace off name and type
+    strip_char arg_name_str, ' '
+    %xdefine arg_name_str retval
+    strip_char arg_type_str, ' '
+    %xdefine arg_type_str retval
+
+    ; check if there is the argument is a reference
+    strip_char arg_type_str, '&'
+    %ifidn arg_type_str, retval
+        %assign arg_type_is_ref 0
+    %else
+        %assign arg_type_is_ref 1
+    %endif
+    strip_char retval, ' '
+    %xdefine arg_type_str retval
+
+    ; check if the reference operator is an out-reference
+    %ifdef arg_type_is_ref
+        %assign arg_type_is_out_ref 0
+        %if arg_type_is_ref
+            %substr arg_type_is_out_ref arg_type_str 0,3
+            %ifidn arg_type_is_out_ref, "out"
+                %assign arg_type_is_out_ref 1
+                %substr arg_type_str arg_type_str 4,-1
+                strip_char arg_type_str, ' '
+                %xdefine arg_type_str retval
+            %endif
+        %endif
+    %endif
+
+    ; get argument register according to sysv64
+    %ifidn arg_regs, ""
+        %error "only 0-6 arguments supported"
+        %exitrep
+    %endif
+    %substr arg_reg_str arg_regs 0,3
+    %substr arg_regs arg_regs 4,-1
+    %deftok arg_reg arg_reg_str
+
+    ; check if the argument should stay in the register / the register should not be pushed
+    %assign arg_in_register 0
+    index_of arg_type_str, '='
+    %strlen arg_type_str_len arg_type_str
+    %if retval-1 != arg_type_str_len
+        %substr arg_in_register arg_type_str retval+1,-1
+        %substr arg_type_str arg_type_str 0,retval-1
+        strip_char_end arg_type_str, ' '
+        %xdefine arg_type_str retval
+
+        strip_char arg_in_register, ' '
+        strip_char_end retval, ' '
+        %xdefine arg_in_register retval
+        %ifnidn arg_in_register, arg_reg_str
+            %strcat error_msg "Argument `", arg_name_str, "` must be in register `", arg_reg_str, "` and not `", arg_in_register, "`"
+            %error error_msg
+        %endif
+        %assign arg_in_register 1
+    %endif
+    %undef arg_type_str_len
 %endmacro
 
 ; stored non-volatile registers == %$__regs_to_push
@@ -154,7 +238,7 @@
     %substr args input open+1,close-open-1
 
     %deftok name name
-    %xdefine regs "rdirsirdxrcxr8 r9 "
+    %xdefine arg_regs "rdirsirdxrcxr8 r9 "
     section .text
     name:
         push rbp
@@ -171,66 +255,36 @@
         ; split off next argument from arguments
         %strlen len args
         %if len == 0
+            %undef len
             %exitrep
         %endif
+        %undef len
         %assign num_args num_args+1
         index_of args, ','
         %substr arg args 0,retval-1
         %substr args args retval+1,-1
-        index_of arg, ':'
-        %substr arg_name_str arg 0,retval-1
-        %substr arg_type_str arg retval+1,-1
 
-        ; strip whitespace off name and type
-        strip_char arg_name_str, ' '
-        %xdefine arg_name_str retval
-        strip_char arg_type_str, ' '
-        %xdefine arg_type_str retval
-        strip_char arg_type_str, '&'
-        %ifidn arg_type_str, retval
-            %assign arg_type_is_ref 0
-        %else
-            %assign arg_type_is_ref 1
-        %endif
-        %xdefine arg_type_str retval
-        strip_char arg_type_str, ' '
-        %xdefine arg_type_str retval
-        %ifdef arg_type_is_ref
-            %if arg_type_is_ref
-                %substr arg_type_is_out_ref arg_type_str 0,3
-                %ifidn arg_type_is_out_ref, "out"
-                    %assign arg_type_is_out_ref 1
-                    %substr arg_type_str arg_type_str 3+1,-1
-                    strip_char arg_type_str, ' '
-                    %xdefine arg_type_str retval
-                %else
-                    %assign arg_type_is_out_ref 0
-                %endif
-            %else
-                %assign arg_type_is_out_ref 0
-            %endif
-        %endif
+        ; parse argument
+
+        parse_arg arg
         %strcat args_with_comma args_with_comma, ", ", arg_name_str
-
-        ; get register
-        %ifidn regs, ""
-            %error "only 0-6 arguments supported"
-            %exitrep
-        %endif
-        %substr reg regs 0,3
-        %substr regs regs 4,-1
-        %deftok reg reg
 
         ; define register for argument name
         %strcat arg_name '%$', arg_name_str
         %deftok arg_name arg_name
-        %xdefine %[arg_name] qword [rbp - (%$__argsize) - 8]
-        push reg
-        %assign %$__argsize %$__argsize + 8
-        %deftok arg_type arg_type_str
+        %if arg_in_register == 0
+            %xdefine %[arg_name] qword [rbp - (%$__argsize) - 8]
+            push arg_reg
+            %assign %$__argsize %$__argsize + 8
+        %else
+            %xdefine %[arg_name] arg_reg
+        %endif
+
         ; insert `check_rtti` if needed
+        %deftok arg_type arg_type_str
         ; The preprocessor doesn't care that we hit %exitrep before.
-        ; It still insists that arg_type must exist here.
+        ; It still insists that arg_type must exist here, even though we would
+        ; define it literally the line above.
         %ifdef arg_type
             %if arg_type %+ __is_primitive == 0
                 %if !arg_type_is_ref
@@ -238,7 +292,7 @@
                     %error error_msg
                 %endif
                 %if !arg_type_is_out_ref
-                    check_rtti reg, arg_type
+                    check_rtti arg_reg, arg_type
                 %endif
             %else
                 %if arg_type_is_ref
@@ -258,8 +312,9 @@
     %undef arg_type_is_ref
     %undef arg_type_is_out_ref
     %undef args_with_comma
-    %undef reg
-    %undef regs
+    %undef arg_reg
+    %undef arg_reg_str
+    %undef arg_regs
     %undef num_args
     %undef args
     %undef arg
@@ -271,7 +326,6 @@
     %undef close
     %undef input
     %undef i
-    %undef len
 %endmacro
 
 %macro local 1+

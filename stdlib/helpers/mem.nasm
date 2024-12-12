@@ -2,15 +2,10 @@
 ; * rdi: destination
 ; * rsi: source
 ; * rdx: num bytes
-%define memcpy(dst, src, num_bytes) call_3 memcpy, dst, src, num_bytes
-section .text
-memcpy:
-    push rbp
-    mov rbp, rsp
-    mov rcx, rdx
+fn memcpy(dst: ptr = rdi, src: ptr = rsi, num_bytes: u64 = rdx):
+    mov rcx, %$num_bytes
     rep movsb
-    pop rbp
-    ret
+endfn
 
 ; INPUT:
 ; * rdi: buffer1
@@ -18,19 +13,14 @@ memcpy:
 ; * rdx: num bytes
 ; OUTPUT:
 ; * EFLAGS
-%define memcmp(buffer1, buffer2, num_bytes) call_3 memcmp, buffer1, buffer2, num_bytes
-section .text
-memcmp:
-    push rbp
-    mov rbp, rsp
-    mov rcx, rdx
+fn memcmp(buffer1: ptr = rdi, buffer2: ptr = rsi, num_bytes: u64 = rdx):
+    mov rcx, %$num_bytes
     repe cmpsb
-    pop rbp
-    ret
+endfn
 
 ; OUTPUT:
 ; * EFLAGS
-fn memcmp_with_lens(buffer1: ptr, buffer1_len: u64, buffer2: ptr, buffer2_len: u64):
+fn memcmp_with_lens(buffer1: ptr = rdi, buffer1_len: u64, buffer2: ptr = rdx, buffer2_len: u64):
     vars
         reg minlen: u64
     endvars
@@ -44,14 +34,14 @@ fn memcmp_with_lens(buffer1: ptr, buffer1_len: u64, buffer2: ptr, buffer2_len: u
     .end:
 endfn
 
-fn memxchg(buffer1: ptr, buffer2: ptr, num_bytes: u64)
+fn memxchg(buffer1: ptr = rdi, buffer2: ptr = rsi, num_bytes: u64 = rdx)
     .loop:
-        cmp %$num_bytes, 0
+        test %$num_bytes, %$num_bytes
         jz .end
-        mov al, [rdi]
-        mov bl, [rsi]
-        mov [rdi], bl
-        mov [rsi], al
+        mov al, [%$buffer1]
+        mov bl, [%$buffer2]
+        mov [%$buffer1], bl
+        mov [%$buffer2], al
         add rdi, 1
         add rsi, 1
         sub %$num_bytes, 1
