@@ -1,8 +1,6 @@
 ; ptr is a primitive
 ; ptr doesn't contain the Rtti itself
 
-ptr_size equ 8
-
 section .text
 ptr__print:
     jmp u64__printhex

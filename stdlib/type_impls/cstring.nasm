@@ -2,8 +2,6 @@
 ; cstring doesn't contain the Rtti itself
 ; cstring is a pointer to a nul-terminated string
 
-cstring_size equ 8
-
 ; keyword for searching: strlen
 ; OUTPUT:
 ; * rax: length without the trailing nul-byte

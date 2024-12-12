@@ -1,8 +1,3 @@
-struc File
-    .rtti: resq 1
-    .fd: resq 1
-endstruc
-
 ; INPUT:
 ; * rdi: (out) this-pointer
 ; * rsi: cstring filename

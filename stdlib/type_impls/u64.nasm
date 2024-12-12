@@ -1,8 +1,6 @@
 ; u64 is a primitive
 ; u64 doesn't contain the Rtti itself
 
-u64_size equ 8
-
 ; INPUT:
 ; * rdi: u64
 ; * rsi: radix

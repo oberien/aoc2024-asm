@@ -1,5 +1,5 @@
 ; simple helper macros
-%include "macros/__is_primitive.nasm"
+%include "macros/types.nasm"
 %include "macros/fn.nasm"
 %include "macros/rodata_cstring.nasm"
 %include "macros/panic.nasm"
@@ -28,19 +28,19 @@
 %include "helpers/assert.nasm"
 
 ; Data Types
-%include "types/Rtti.nasm"
-%include "types/String.nasm"
+%include "type_impls/Rtti.nasm"
+%include "type_impls/String.nasm"
 gen_Rtti String
-%include "types/u64.nasm"
+%include "type_impls/u64.nasm"
 gen_Rtti u64
 %undef ptr
-%include "types/ptr.nasm"
+%include "type_impls/ptr.nasm"
 gen_Rtti ptr
-%include "types/cstring.nasm"
+%include "type_impls/cstring.nasm"
 gen_Rtti cstring
-%include "types/File.nasm"
+%include "type_impls/File.nasm"
 gen_Rtti File
-%include "types/Array.nasm"
+%include "type_impls/Array.nasm"
 gen_Rtti Array
 
 ; late helpers requiring fn calls to types

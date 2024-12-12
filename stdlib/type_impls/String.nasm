@@ -1,10 +1,3 @@
-struc String
-    .rtti: resq 1
-    .ptr: resq 1
-    .len: resq 1
-    .capacity: resq 1
-endstruc
-
 ; INPUT:
 ; * rdi: (out) this-pointer
 ; * rsi: capacity
