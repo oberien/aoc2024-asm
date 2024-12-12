@@ -149,10 +149,10 @@
     ; * arg_name_str
     ; * arg_type_str
     ; * arg_type_is_ref: 1 if yes, 0 otherwise
-    ; * arg_type_is_out_ref: 1 if yes, 0 otherwise
+    ; * arg_type_is_out: 1 if yes, 0 otherwise
     ; * arg_reg: register the argument is passed in
     ; * arg_reg_str: register the argument is passed in as string
-    ; * arg_in_register: if the argument should be referred to in the register or pushed to the stack
+    ; * arg_is_in_register: if the argument should be referred to in the register or pushed to the stack
 
     index_of %1, ':'
     %substr arg_name_str %1 0,retval-1
@@ -174,18 +174,14 @@
     strip_char retval, ' '
     %xdefine arg_type_str retval
 
-    ; check if the reference operator is an out-reference
-    %ifdef arg_type_is_ref
-        %assign arg_type_is_out_ref 0
-        %if arg_type_is_ref
-            %substr arg_type_is_out_ref arg_type_str 0,3
-            %ifidn arg_type_is_out_ref, "out"
-                %assign arg_type_is_out_ref 1
-                %substr arg_type_str arg_type_str 4,-1
-                strip_char arg_type_str, ' '
-                %xdefine arg_type_str retval
-            %endif
-        %endif
+    ; check if this is an out-parameter
+    %assign arg_type_is_out 0
+    %substr arg_type_is_out arg_type_str 0,3
+    %ifidn arg_type_is_out, "out"
+        %assign arg_type_is_out 1
+        %substr arg_type_str arg_type_str 4,-1
+        strip_char arg_type_str, ' '
+        %xdefine arg_type_str retval
     %endif
 
     ; get argument register according to sysv64
@@ -198,23 +194,23 @@
     %deftok arg_reg arg_reg_str
 
     ; check if the argument should stay in the register / the register should not be pushed
-    %assign arg_in_register 0
+    %assign arg_is_in_register 0
     index_of arg_type_str, '='
     %strlen arg_type_str_len arg_type_str
     %if retval-1 != arg_type_str_len
-        %substr arg_in_register arg_type_str retval+1,-1
+        %substr arg_is_in_register arg_type_str retval+1,-1
         %substr arg_type_str arg_type_str 0,retval-1
         strip_char_end arg_type_str, ' '
         %xdefine arg_type_str retval
 
-        strip_char arg_in_register, ' '
+        strip_char arg_is_in_register, ' '
         strip_char_end retval, ' '
-        %xdefine arg_in_register retval
-        %ifnidn arg_in_register, arg_reg_str
-            %strcat error_msg "Argument `", arg_name_str, "` must be in register `", arg_reg_str, "` and not `", arg_in_register, "`"
+        %xdefine arg_is_in_register retval
+        %ifnidn arg_is_in_register, arg_reg_str
+            %strcat error_msg "Argument `", arg_name_str, "` must be in register `", arg_reg_str, "` and not `", arg_is_in_register, "`"
             %error error_msg
         %endif
-        %assign arg_in_register 1
+        %assign arg_is_in_register 1
     %endif
     %undef arg_type_str_len
 %endmacro
@@ -272,7 +268,7 @@
         ; define register for argument name
         %strcat arg_name '%$', arg_name_str
         %deftok arg_name arg_name
-        %if arg_in_register == 0
+        %if arg_is_in_register == 0
             %xdefine %[arg_name] qword [rbp - (%$__argsize) - 8]
             push arg_reg
             %assign %$__argsize %$__argsize + 8
@@ -280,25 +276,32 @@
             %xdefine %[arg_name] arg_reg
         %endif
 
-        ; insert `check_rtti` if needed
         %deftok arg_type arg_type_str
         ; The preprocessor doesn't care that we hit %exitrep before.
         ; It still insists that arg_type must exist here, even though we would
         ; define it literally the line above.
         %ifdef arg_type
-            %if arg_type %+ __is_primitive == 0
-                %if !arg_type_is_ref
-                    %strcat error_msg "Argument `", arg_name_str, "` must be a reference: `&", arg_type_str, "`"
-                    %error error_msg
-                %endif
-                %if !arg_type_is_out_ref
-                    check_rtti arg_reg, arg_type
-                %endif
-            %else
-                %if arg_type_is_ref
-                    %strcat error_msg "Argument `", arg_name_str, "` must not be a reference: `", arg_type_str, "`"
-                    %error error_msg
-                %endif
+            %assign is_primitive arg_type %+ __is_primitive
+
+
+            ; insert `check_rtti` if needed
+            %if !is_primitive && !arg_type_is_out
+                check_rtti arg_reg, arg_type
+            %endif
+
+            %if !is_primitive && !arg_is_in_register && !arg_type_is_ref
+                %strcat error_msg "Object argument `", arg_name_str, "` stored on stack must be a reference: `&", arg_type_str, "`"
+                %error error_msg
+            %endif
+
+            %if !is_primitive && arg_is_in_register && arg_type_is_ref
+                %strcat error_msg "Object argument `", arg_name_str, "` used as register must not be a reference: `", arg_type_str, "`"
+                %error error_msg
+            %endif
+
+            %if is_primitive && arg_type_is_ref
+                %strcat error_msg "Primitive argument `", arg_name_str, "` must not be a reference: `", arg_type_str, "`"
+                %error error_msg
             %endif
         %endif
     %endrep
@@ -309,8 +312,9 @@
     %xdefine %[name](%[args_with_comma]) call_%[num_args] %[name] %[args_with_comma_leading]
 
     %undef error_msg
+    %undef is_primitive
     %undef arg_type_is_ref
-    %undef arg_type_is_out_ref
+    %undef arg_type_is_out
     %undef args_with_comma
     %undef arg_reg
     %undef arg_reg_str
@@ -326,6 +330,7 @@
     %undef close
     %undef input
     %undef i
+    %undef len
 %endmacro
 
 %macro local 1+

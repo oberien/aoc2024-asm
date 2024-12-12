@@ -90,7 +90,7 @@ endfn
 ; OUTPUT:
 ; * rdi: String-ptr (not clobbered)
 ; * rsi: index after the line
-fn parse_line_as_u64_array(_string: &String = rdi, _index: u64 = rsi, out_array: &out Array):
+fn parse_line_as_u64_array(_string: String = rdi, _index: u64 = rsi, out_array: &out Array):
     vars
         reg string: ptr
         reg index: u64
