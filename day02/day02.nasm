@@ -33,10 +33,10 @@ main:
     call File__destroy
 
     lea rdi, [string]
-    call String__println
+    String__println(rdi)
 
     lea rdi, [string]
-    call String__count_lines
+    String__count_lines(rdi)
 
     lea rdi, [lines]
     mov rsi, Array_Rtti
@@ -69,7 +69,7 @@ main:
     call Array__destroy
 
     lea rdi, [string]
-    call String__destroy
+    String__destroy(rdi)
 
     lea rdi, [lines]
     call Array__println

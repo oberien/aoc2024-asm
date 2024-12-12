@@ -8,69 +8,42 @@ endstruc
 ; INPUT:
 ; * rdi: (out) this-pointer
 ; * rsi: capacity
-section .text
-String__with_capacity:
-    push rbp
-    mov rbp, rsp
-    push r12
-    push r13
-    %define this r12
-    %define capacity r13
-    mov this, rdi
-    mov capacity, rsi
-
-    mov rdi, capacity
-    malloc(capacity)
-    mov qword [this + String.rtti], String_Rtti
-    mov qword [this + String.ptr], rax
-    mov qword [this + String.len], 0
-    mov qword [this + String.capacity], capacity
-
-    pop r13
-    pop r12
-    pop rbp
-    ret
+fn String__with_capacity(this: &out String, capacity: u64):
+    malloc(%$capacity)
+    mov rdi, %$this
+    mov rsi, %$capacity
+    mov qword [rdi + String.rtti], String_Rtti
+    mov qword [rdi + String.ptr], rax
+    mov qword [rdi + String.len], 0
+    mov qword [rdi + String.capacity], rsi
+endfn
 
 ; INPUT
 ; * rdi: this-ptr
 ; * rsi: buffer to copy from
 ; * rdx: num-bytes
-section .text
-String__append_raw:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, String
-
-    mov rcx, [rdi + String.len]
-    add rcx, rdx
-    cmp rcx, [rdi + String.capacity]
+fn String__append_raw(this: String = rdi, buffer: ptr = rsi, num_bytes: u64 = rdx):
+    mov rcx, [%$this + String.len]
+    add rcx, %$num_bytes
+    cmp rcx, [%$this + String.capacity]
     jbe .next
     panic `String__append_raw not enough capacity`
 
     .next:
-    mov [rdi + String.len], rcx
-    sub rcx, rdx
-    mov rdi, [rdi + String.ptr]
-    add rdi, rcx
-    memcpy(rdi, rsi, rdx)
-
-    pop rbp
-    ret
+    mov rax, [%$this + String.ptr]
+    add rax, [%$this + String.len]
+    mov [%$this + String.len], rcx
+    memcpy(rax, %$buffer, %$num_bytes)
+endfn
 
 
 ; INPUT:
 ; * rdi: this-ptr
 ; OUTPUT:
 ; * rax: number of lines
-section .text
-String__count_lines:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, String
-    %define string rdi
-
-    mov rsi, [string + String.len]
-    mov rdi, [string + String.ptr]
+fn String__count_lines(this: String = rdi):
+    mov rsi, [rdi + String.len]
+    mov rdi, [rdi + String.ptr]
 
     ; number of newlines + 1
     mov rax, 1
@@ -86,84 +59,45 @@ String__count_lines:
         jmp .loop
 
     .end:
-    pop rbp
-    ret
+endfn
 
-section .text
-String__print:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, String
-    mov rsi, [rdi + String.ptr]
-    mov rdx, [rdi + String.len]
+fn String__print(this: String = rdi):
+    mov rsi, [%$this + String.ptr]
+    mov rdx, [%$this + String.len]
     mov rdi, STDOUT
     write_all(rdi, rsi, rdx)
-    pop rbp
-    ret
+endfn
 
-section .text
-String__println:
-    push rbp
-    mov rbp, rsp
-    call String__print
+fn String__println(this: String = rdi):
+    String__print(%$this)
     print_newline()
-    pop rbp
-    ret
+endfn
 
-section .text
-String__cmp:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, String
-    check_rtti rsi, String
-    %define this r8
-    %define other r9
-    mov this, rdi
-    mov other, rsi
-
-    mov rdi, [this + String.ptr]
-    mov rsi, [this + String.len]
-    mov rdx, [other + String.ptr]
-    mov rcx, [other + String.len]
+fn String__cmp(this: String = rdi, other: String = rsi):
+    mov rdx, [%$other + String.ptr]
+    mov rcx, [%$other + String.len]
+    mov rsi, [%$this + String.len]
+    mov rdi, [%$this + String.ptr]
     memcmp_with_lens(rdi, rsi, rdx, rcx)
+endfn
 
-    pop rbp
-    ret
+fn String__clone_into(_this: String = rdi, _other: out String = rsi):
+    vars
+        reg this: ptr
+        reg other: ptr
+    endvars
+    mov %$this, %$_this
+    mov %$other, %$_other
 
-section .text
-String__clone_into:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, String
-    %define this r12
-    %define other r13
-    multipush r12, r13
-    mov this, rdi
-    mov other, rsi
+    String__with_capacity(%$other, [%$this + String.capacity])
+    memcpy([%$other + String.ptr], [%$this + String.ptr], [%$this + String.len])
 
-    mov rdi, other
-    mov rsi, [this + String.capacity]
-    call String__with_capacity
+    mov rdi, [%$this + String.len]
+    mov [%$other + String.len], rdi
+endfn
 
-    mov rdi, [other + String.ptr]
-    mov rsi, [this + String.ptr]
-    mov rdx, [this + String.len]
-    memcpy(rdi, rsi, rdx)
-
-    mov rdi, [this + String.len]
-    mov [other + String.len], rdi
-
-    multipop r12, r13
-    pop rbp
-    ret
-
-section .text
-String__destroy:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, String
-    mov rsi, [rdi + String.capacity]
-    mov rdi, [rdi + String.ptr]
+fn String__destroy(this: String = rdi):
+    mov rsi, [%$this + String.capacity]
+    mov rdi, [%$this + String.ptr]
     free(rdi, rsi)
-    pop rbp
-    ret
+endfn

@@ -12,27 +12,23 @@ main:
     pop rbp
     ret
 
-hello_world:
-    push rbp
-    mov rbp, rsp
-    %define string rbp - String_size
-    sub rsp, String_size
+fn hello_world():
+    vars
+        local string: String
+    endvars
 
-    lea rdi, [string]
-    mov rsi, 1337
-    call String__with_capacity
+    lea rdi, [%$string]
+    String__with_capacity(rdi, 1337)
 
     rodata_cstring .s, `Hello, World!`
-    lea rdi, [string]
-    mov rsi, .s
-    mov rdx, .s_len
-    call String__append_raw
+    lea rdi, [%$string]
+    String__append_raw(rdi, .s, .s_len)
 
-    lea rdi, [string]
-    call String__println
+    lea rdi, [%$string]
+    String__println(rdi)
 
-    lea rdi, [string]
-    call String__destroy
+    lea rdi, [%$string]
+    String__destroy(rdi)
 
     mov rsp, rbp
     pop rbp

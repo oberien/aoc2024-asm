@@ -95,7 +95,7 @@ File__read_to_string:
     ; create string
     mov rdi, string
     mov rsi, to_read
-    call String__with_capacity
+    String__with_capacity(rdi, rsi)
 
     ; read all
     mov rdi, [this + File.fd]

@@ -26,7 +26,6 @@
 %include "helpers/mem.nasm"
 %include "helpers/print_newline.nasm"
 %include "helpers/assert.nasm"
-%include "helpers/parse.nasm"
 
 ; Data Types
 %include "types/Rtti.nasm"
@@ -43,6 +42,12 @@ gen_Rtti cstring
 gen_Rtti File
 %include "types/Array.nasm"
 gen_Rtti Array
+
+; late helpers requiring fn calls to types
+%undef string
+%undef ptr
+%undef index
+%include "helpers/parse.nasm"
 
 section .text
 global _start
