@@ -2,32 +2,18 @@
 ; * rdi: (out) this-pointer
 ; * rsi: element RTTI
 ; * rdx: capacity
-section .text
-Array__with_capacity:
-    push rbp
-    mov rbp, rsp
-    push r12
-    push r13
-    %define this r12
-    %define capacity r13
-    mov this, rdi
-    mov capacity, rdx
+fn Array__with_capacity(this: out Array = reg, element_rtti: Rtti = rsi, capacity: u64 = reg):
+    mov %$this.rtti, Array_Rtti
+    mov %$this.element_rtti, %$element_rtti
 
-    mov qword [this + Array.rtti], Array_Rtti
-    mov [this + Array.element_rtti], rsi
-
-    mov rdi, capacity
-    imul rdi, [rsi + Rtti.size]
-
+    mov rdi, %$capacity
+    imul rdi, %$element_rtti.size
     malloc(rdi)
-    mov qword [this + Array.ptr], rax
-    mov qword [this + Array.len], 0
-    mov qword [this + Array.capacity], capacity
 
-    pop r13
-    pop r12
-    pop rbp
-    ret
+    mov %$this.ptr, rax
+    mov %$this.len, 0
+    mov %$this.capacity, %$capacity
+endfn
 
 ; INPUT
 ; * rdi: this-ptr

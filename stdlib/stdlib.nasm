@@ -33,6 +33,7 @@
 %include "type_impls/u64.nasm"
 %include "type_impls/ptr.nasm"
 %include "type_impls/cstring.nasm"
+%include "type_impls/Rtti.nasm"
 %include "type_impls/File.nasm"
 %include "type_impls/Array.nasm"
 
