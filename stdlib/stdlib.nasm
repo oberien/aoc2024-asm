@@ -31,7 +31,6 @@
 ; Data Types
 %include "type_impls/String.nasm"
 %include "type_impls/u64.nasm"
-%undef ptr
 %include "type_impls/ptr.nasm"
 %include "type_impls/cstring.nasm"
 %include "type_impls/File.nasm"

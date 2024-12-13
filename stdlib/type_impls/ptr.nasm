@@ -13,14 +13,10 @@ section .text
 ptr__cmp:
     jmp u64__cmp
 
-section .text
-ptr__clone_into:
-    push rbp
-    mov rbp, rsp
+fn ptr__clone_into(this: ptr = rdi):
     panic `clone_into not applicable for ptr`
+endfn
 
-section .text
-ptr__destroy:
-    push rbp
-    mov rbp, rsp
+fn ptr__destroy(this: ptr = rdi):
     panic `destroy not applicable for ptr`
+endfn
