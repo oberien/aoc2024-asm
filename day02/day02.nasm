@@ -23,14 +23,14 @@ main:
     lea rdi, [file]
     mov rsi, [args + Array.ptr]
     mov rsi, [rsi + 0x8]
-    call File__open
+    File__open(rdi, rsi)
 
     lea rdi, [file]
     lea rsi, [string]
-    call File__read_to_string
+    File__read_to_string(rdi, rsi)
 
     lea rdi, [file]
-    call File__destroy
+    File__destroy(rdi)
 
     lea rdi, [string]
     String__println(rdi)
@@ -108,8 +108,7 @@ part1:
     call cstring__print
 
     pop rax
-    mov rdi, rax
-    call u64__println
+    u64__println(rax)
 
     pop rbp
     ret
@@ -191,8 +190,7 @@ part2:
     mov rdi, .part2
     call cstring__print
 
-    mov rdi, count
-    call u64__println
+    u64__println(count)
 
     multipop r12, r13, r14, r15, rbx
     pop rbp
