@@ -11,8 +11,9 @@ fn Rtti__println(this: Rtti = rdi):
     print_newline()
 endfn
 
-fn Rtti__cmp(this: Rtti = rdi):
-    panic `clone_into not applicable for Rtti`
+fn Rtti__cmp(this: Rtti = rdi, other: Rtti = rsi):
+    cmp rdi, rsi
+endfn
 
 fn Rtti__clone_into(this: Rtti = rdi):
     panic `clone_into not applicable for Rtti`

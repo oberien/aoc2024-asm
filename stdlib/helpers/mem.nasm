@@ -14,6 +14,10 @@ endfn
 ; OUTPUT:
 ; * EFLAGS
 fn memcmp(buffer1: ptr = rdi, buffer2: ptr = rsi, num_bytes: u64 = rdx):
+    ; cmpsb compares rsi with rdi, but we want to compare rdi to rsi
+    mov rcx, rdi
+    mov rdi, rsi
+    mov rsi, rcx
     mov rcx, %$num_bytes
     repe cmpsb
 endfn
@@ -39,8 +43,8 @@ fn memxchg(buffer1: ptr = rdi, buffer2: ptr = rsi, num_bytes: u64 = rdx)
         test %$num_bytes, %$num_bytes
         jz .end
         mov al, [%$buffer1]
-        mov bl, [%$buffer2]
-        mov [%$buffer1], bl
+        mov cl, [%$buffer2]
+        mov [%$buffer1], cl
         mov [%$buffer2], al
         add rdi, 1
         add rsi, 1
