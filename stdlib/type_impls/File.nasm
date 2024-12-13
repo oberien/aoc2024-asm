@@ -1,111 +1,11 @@
 ; INPUT:
 ; * rdi: (out) this-pointer
 ; * rsi: cstring filename
-section .text
-File__open:
-    push rbp
-    mov rbp, rsp
-    %define this r12
-    push r12
-    mov this, rdi
-
-    syscall_open(rsi, O_RDONLY, 0)
-    mov qword [this + File.rtti], File_Rtti
-    mov [this + File.fd], rax
-
-    pop r12
-    pop rbp
-    ret
-
-; INPUT:
-; * rdi: this-ptr
-; OUTPUT:
-; * rax: total length of file
-; * rdi: left to read
-section .text
-File__len:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, File
-    %define this r12
-    %define current r13
-    %define len r14
-    push r12
-    push r13
-    push r14
-    mov this, rdi
-
-    ; get current position
-    mov rdi, this
-    mov rsi, 0
-    mov rdx, SEEK_CUR
-    call File__seek
-    mov current, rax
-
-    ; get maximum position = length
-    mov rdi, this
-    mov rsi, 0
-    mov rdx, SEEK_END
-    call File__seek
-    mov len, rax
-
-    ; seek back to previous position
-    mov rdi, this
-    mov rsi, current
-    mov rdx, SEEK_SET
-    call File__seek
-
-    mov rax, len
-    mov rdi, rax
-    sub rdi, current
-
-    pop r14
-    pop r13
-    pop r12
-    pop rbp
-    ret
-
-; INPUT:
-; * rdi: this-ptr
-; * rsi: (out) String
-section .text
-File__read_to_string:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, File
-    %define this r12
-    %define string r13
-    %define to_read r14
-    push r12
-    push r13
-    push r14
-    mov this, rdi
-    mov string, rsi
-
-    ; get number of bytes left to read
-    mov rdi, this
-    call File__len
-    mov to_read, rdi
-
-    ; create string
-    mov rdi, string
-    mov rsi, to_read
-    String__with_capacity(rdi, rsi)
-
-    ; read all
-    mov rdi, [this + File.fd]
-    mov rsi, [string + String.ptr]
-    mov rdx, to_read
-    read_all(rdi, rsi, rdx)
-    assert_eq rax, to_read
-
-    mov [string + String.len], to_read
-
-    pop r14
-    pop r13
-    pop r12
-    pop rbp
-    ret
+fn File__open(this: out File = reg, filename: cstring = rsi):
+    syscall_open(%$filename, O_RDONLY, 0)
+    mov %$this.rtti, File_Rtti
+    mov %$this.fd, rax
+endfn
 
 ; INPUT:
 ; * rdi: this-ptr
@@ -113,67 +13,80 @@ File__read_to_string:
 ; * rdx: whence (SEEK_SET, SEEK_CUR, SEEK_END)
 ; OUTPUT:
 ; * rax: new position
-section .text
-File__seek:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, File
+fn File__seek(this: File = rdi, offset: u64 = rsi, whence: u64 = rdx):
+    syscall_lseek(%$this.fd, %$offset, %$whence)
+endfn
 
-    syscall_lseek([rdi + File.fd], rsi, rdx)
+; INPUT:
+; * rdi: this-ptr
+; OUTPUT:
+; * rax: total length of file
+; * rdi: left to read
+fn File__len(this: File = reg):
+    vars
+        reg current: u64
+        reg len: u64
+    endvars
 
-    pop rbp
-    ret
+    ; get current position
+    File__seek(%$this, 0, SEEK_CUR)
+    mov %$current, rax
 
-section .text
-File__print:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, File
-    %define this r12
-    push r12
-    mov this, rdi
+    ; get maximum position = length
+    File__seek(%$this, 0, SEEK_END)
+    mov %$len, rax
 
+    ; seek back to previous position
+    File__seek(%$this, %$current, SEEK_SET)
+
+    mov rax, %$len
+    mov rdi, %$len
+    sub rdi, %$current
+endfn
+
+; INPUT:
+; * rdi: this-ptr
+; * rsi: (out) String
+fn File__read_to_string(this: File = reg, string: out String = reg):
+    vars
+        reg to_read: u64
+    endvars
+
+    ; get number of bytes left to read
+    File__len(%$this)
+    mov %$to_read, rdi
+
+    ; create string
+    String__with_capacity(%$string, %$to_read)
+
+    ; read all
+    read_all(%$this.fd, %$string.ptr, %$to_read)
+    assert_eq rax, %$to_read
+
+    mov %$string.len, %$to_read
+endfn
+
+fn File__print(this: File = reg):
     rodata_cstring .s, `File with fd=`
-    mov rdi, .s
-    call cstring__print
-    mov rdi, [this + File.fd]
-    call u64__print
+    cstring__print(.s)
+    u64__print(%$this.fd)
+endfn
 
-    pop r12
-    pop rbp
-    ret
-
-section .text
-File__println:
-    push rbp
-    mov rbp, rsp
-    call File__print
+fn File__println(this: File = rdi):
+    File__print(%$this)
     print_newline()
-    pop rbp
-    ret
+endfn
 
-section .text
-File__cmp:
-    push rbp
-    mov rbp, rsp
+fn File__cmp(this: File = rdi, other: File = rsi):
     panic `File is not comparable`
+endfn
 
-section .text
-File__clone_into:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, File
-    mov qword [rsi + File.rtti], File_Rtti
-    mov rdx, [rdi + File.fd]
-    mov [rsi + File.fd], rdx
-    pop rbp
-    ret
+fn File__clone_into(this: File = rdi, other: out File = rsi):
+    mov %$other.rtti, File_Rtti
+    mov rdx, %$this.fd
+    mov %$other.fd, rdx
+endfn
 
-section .text
-File__destroy:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, File
-    syscall_close([rdi + File.fd])
-    pop rbp
-    ret
+fn File__destroy(this: File = rdi)
+    syscall_close(%$this.fd)
+endfn

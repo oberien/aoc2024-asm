@@ -73,7 +73,7 @@ endstruc
             %deftok field_name field_name
             %strcat var_name %2, ".", field_name
             %deftok var_name var_name
-            %strcat value "[", %2, " + ", %1, ".", field_name, "]"
+            %strcat value "qword [", %2, " + ", %1, ".", field_name, "]"
             %deftok value value
             %xdefine %[var_name] value
             %assign index index + 1
