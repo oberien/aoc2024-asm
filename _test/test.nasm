@@ -1,4 +1,4 @@
-%include "stdlib.nasm"
+%include "../stdlib/stdlib.nasm"
 %include "test_array.nasm"
 
 section .text
@@ -16,6 +16,7 @@ fn hello_world():
     vars
         local string: String
     endvars
+    mov rdi, string.ptr
 
     lea rdi, [%$string]
     String__with_capacity(rdi, 1337)
@@ -30,6 +31,4 @@ fn hello_world():
     lea rdi, [%$string]
     String__destroy(rdi)
 
-    mov rsp, rbp
-    pop rbp
-    ret
+endfn

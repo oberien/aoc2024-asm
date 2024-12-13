@@ -75,11 +75,11 @@ fn String__cmp(this: String = rdi, other: String = rsi):
 endfn
 
 fn String__clone_into(this: String = reg, other: out String = reg):
-    String__with_capacity(%$other, [%$this + String.capacity])
-    memcpy([%$other + String.ptr], [%$this + String.ptr], [%$this + String.len])
+    String__with_capacity(%$other, %$this.capacity)
+    memcpy(%$other.ptr, %$this.ptr, %$this.len)
 
-    mov rdi, [%$this + String.len]
-    mov [%$other + String.len], rdi
+    mov rdi, %$this.len
+    mov %$other.len, rdi
 endfn
 
 fn String__destroy(this: String = rdi):

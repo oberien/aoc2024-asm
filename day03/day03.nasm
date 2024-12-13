@@ -21,6 +21,8 @@ fn foo(_this: &Array, _other: cstring, _next: &String):
         reg quux: Array
         reg corge: Array
     endvars
+    mov rdi, %$foo.ptr
+    mov rdi, %$next.ptr
     mov %$this, %$_this
     mov rdi, %$_other
     mov %$lul, rdi

@@ -300,6 +300,7 @@
         ; parse argument
 
         parse_arg arg
+        %deftok arg_type arg_type_str
 
         ; The preprocessor doesn't care that we hit %exitrep before.
         ; It still insists that all variables must exist here.
@@ -308,6 +309,11 @@
 
             ; define register for argument name
             %strcat arg_name '%$', arg_name_str
+
+            %if arg_is_in_register
+                __%[arg_type]__create_fields__ arg_type_str, arg_name
+            %endif
+
             %deftok arg_name arg_name
             %if arg_is_in_arg_register
                 %xdefine %[arg_name] arg_reg
@@ -325,7 +331,6 @@
             %endif
 
             ; handle type shenanigans
-            %deftok arg_type arg_type_str
             %assign is_primitive arg_type %+ __is_primitive
 
 
@@ -388,13 +393,14 @@
     %defstr input %1
     index_of input, ':'
     %substr name input 0,retval-1
-    %substr type input retval+1,-1
-    strip_char type, ' '
-    %xdefine type retval
+    %substr type_str input retval+1,-1
+    strip_char type_str, ' '
+    %xdefine type_str retval
 
+    %deftok type type_str
     %strcat name "%$", name
+    __%[type]__create_fields__ type_str, name
     %deftok name name
-    %deftok type type
     %xdefine addr rbp - (%[%$__argsize] + %[%$__localsize]) - %[type]_size
     %if type %+ __is_primitive == 1
         %xdefine %[name] qword [addr]
@@ -405,6 +411,7 @@
 
     %undef addr
     %undef type
+    %undef type_str
     %undef name
     %undef input
 %endmacro
@@ -420,19 +427,21 @@
 
     index_of input, ':'
     %substr name input 0,retval-1
-    %substr type input retval+1,-1
-    strip_char type, ' '
-    %xdefine type retval
+    %substr type_str input retval+1,-1
+    strip_char type_str, ' '
+    %xdefine type_str retval
 
+    %deftok type type_str
     %strcat name "%$", name
+    __%[type]__create_fields__ type_str, name
     %deftok name name
-    %deftok type type
     %deftok reg reg
     %xdefine %[name] reg
     ; we just ignore the type -- nothing we can / need to do here
 
     %undef name
     %undef type
+    %undef type_str
     %undef reg
     %undef input
 %endmacro
