@@ -2,23 +2,17 @@
 ; * rdi: String-ptr
 ; * rsi: index
 ; OUTPUT:
-; * rdi: String-ptr
 ; * rsi: new index after number
 ; * rax: u64 number
-fn atoi(string: &String, _index: u64):
+fn atoi(string: String = rdi, index: u64 = rsi):
     vars
         reg ptr: ptr
-        reg len: u64
-        reg index: u64
     endvars
-    mov rdi, %$string
-    mov %$ptr, [rdi + String.ptr]
-    mov %$len, [rdi + String.len]
-    mov %$index, %$_index
+    mov %$ptr, %$string.ptr
 
     xor eax, eax
     .loop:
-        cmp %$index, %$len
+        cmp %$index, %$string.len
         jae .end
         xor ecx, ecx
         mov cl, [%$ptr + %$index]
@@ -33,31 +27,25 @@ fn atoi(string: &String, _index: u64):
         jmp .loop
 
     .end:
-    mov rdi, %$string
-    mov rsi, %$index
 endfn
 
 ; INPUT:
 ; * rdi: String-ptr
 ; * rsi: index
 ; OUTPUT:
-; * rdi: String-ptr (not clobbered)
 ; * rsi: index after whitespace
 ; * rax: number of newline characters skipped
-fn skip_whitespace(string: &String, index: u64):
+fn skip_whitespace(string: String = rdi, index: u64 = rsi):
     vars
         reg ptr: ptr
-        reg len: u64
     endvars
-    mov rdi, %$string
-    mov %$ptr, [rdi + String.ptr]
-    mov %$len, [rdi + String.len]
+    mov %$ptr, %$string.ptr
 
     xor eax, eax
     .loop:
-        cmp %$index, %$len
-        mov rdi, %$index
-        mov dl, byte [%$ptr + rdi]
+        cmp %$index, %$string.len
+        mov r9, %$index
+        mov dl, byte [%$ptr + r9]
         jae .end
         cmp dl, ` `
         je .continue
@@ -79,8 +67,6 @@ fn skip_whitespace(string: &String, index: u64):
         jmp .loop
 
     .end:
-    mov rdi, %$string
-    mov rsi, %$index
 endfn
 
 ; INPUT:
@@ -88,7 +74,6 @@ endfn
 ; * rsi: index
 ; * rdx: (out) Array<u64>
 ; OUTPUT:
-; * rdi: String-ptr (not clobbered)
 ; * rsi: index after the line
 fn parse_line_as_u64_array(string: String = reg, index: u64 = reg, out_array: &out Array):
     .loop:
@@ -110,6 +95,5 @@ fn parse_line_as_u64_array(string: String = reg, index: u64 = reg, out_array: &o
         jmp .loop
 
     .end:
-    mov rdi, %$string
     mov rsi, %$index
 endfn
