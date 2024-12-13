@@ -16,7 +16,7 @@ fn hello_world():
     vars
         local string: String
     endvars
-    mov rdi, string.ptr
+    mov rdi, %$string.ptr
 
     lea rdi, [%$string]
     String__with_capacity(rdi, 1337)

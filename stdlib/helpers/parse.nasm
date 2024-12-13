@@ -90,16 +90,9 @@ endfn
 ; OUTPUT:
 ; * rdi: String-ptr (not clobbered)
 ; * rsi: index after the line
-fn parse_line_as_u64_array(_string: String = rdi, _index: u64 = rsi, out_array: &out Array):
-    vars
-        reg string: ptr
-        reg index: u64
-    endvars
-    mov %$string, %$_string
-    mov %$index, %$_index
-
+fn parse_line_as_u64_array(string: String = reg, index: u64 = reg, out_array: &out Array):
     .loop:
-        cmp %$index, [%$string + String.len]
+        cmp %$index, %$string.len
         jae .end
 
         skip_whitespace(%$string, %$index)

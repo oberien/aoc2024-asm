@@ -322,6 +322,7 @@
                 %substr %$__regs %$__regs 4,-1
                 %strcat %$__arg_nvregs_to_pop %$__arg_nvregs_to_pop, ", ", reg
                 %strcat nv_arg_instructions nv_arg_instructions, `push `, reg, `\nmov `, reg, `, `, arg_reg_str, `\n`
+                %deftok reg reg
                 %xdefine %[arg_name] reg
                 %undef reg
             %else
