@@ -212,6 +212,8 @@
     %endif
     %substr arg_reg_str arg_regs 0,3
     %substr arg_regs arg_regs 4,-1
+    strip_char_end arg_reg_str, ' '
+    %xdefine arg_reg_str retval
     %deftok arg_reg arg_reg_str
 
     ; check if the argument should stay in the register / the register should not be pushed

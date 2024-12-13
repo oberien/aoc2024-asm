@@ -1,3 +1,5 @@
+%define NULL 0
+
 %define String__is_primitive 0
 define_struct String, rtti, ptr, len, capacity
 

@@ -7,60 +7,40 @@
 ; * rdx: alphabet -- must have $rsi bytes
 ; * rcx: prefix
 ; * r8: prefix_len
-section .text
-u64__print_radix:
-    push rbp
-    mov rbp, rsp
+fn u64__print_radix(number: u64 = reg, radix: u64 = reg, alphabet: ptr = reg, prefix: ptr = rcx, prefix_len: u64 = r8)
     ; 64bit integers have up to 19 decimal digits
     ; 8-byte stack alignment -> 24 bytes
-    sub rsp, 0x18
-    %define content rbp
-    %define number r12
-    %define radix r13
-    %define alphabet r14
-    %define len rcx
-    push r12
-    push r13
-    push r14
-    mov number, rdi
-    mov radix, rsi
-    mov alphabet, rdx
+    vars
+        local first: u64
+        local second: u64
+        local third: u64
+    endvars
+    %define %$len rcx
+    %define %$content rbp
 
     ; print prefix
-    mov rdi, STDOUT
-    mov rsi, rcx
-    mov rdx, r8
-    write_all(rdi, rsi, rdx)
+    write_all(STDOUT, %$prefix, %$prefix_len)
 
     ; convert
 
-    mov rax, number
-    mov rcx, 0
+    mov rax, %$number
+    mov %$len, 0
     .loop:
         xor edx, edx
-        div radix
-        mov dl, [alphabet + rdx]
-        inc len
-        mov rdi, len
+        div %$radix
+        mov dl, [%$alphabet + rdx]
+        inc %$len
+        mov rdi, %$len
         neg rdi
-        mov [content + rdi], dl
+        mov [%$content + rdi], dl
         test rax, rax
         jnz .loop
 
-    mov rdi, len
+    mov rdi, %$len
     neg rdi
-    lea rsi, [content + rdi]
-    mov rdi, STDOUT
-    mov rdx, len
-    write_all(rdi, rsi, rdx)
-
-    pop r14
-    pop r13
-    pop r12
-    mov rsp, rbp
-    pop rbp
-    ret
-
+    lea rsi, [%$content + rdi]
+    write_all(STDOUT, rsi, %$len)
+endfn
 
 fn u64__print(this: u64 = rdi):
     rodata_cstring .decbytes, `0123456789`
@@ -68,53 +48,33 @@ fn u64__print(this: u64 = rdi):
     mov rdx, .decbytes
     mov rcx, 0
     mov r8, 0
-    call u64__print_radix
+    u64__print_radix(%$this, 10, .decbytes, NULL, 0)
 endfn
 
 fn u64__printhex(this: u64 = rdi)
     rodata_cstring .hexprefix, `0x`
     rodata_cstring .hexbytes, `0123456789abcdef`
-    mov rsi, 16
-    mov rdx, .hexbytes
-    mov rcx, .hexprefix
-    mov r8, 2
-    call u64__print_radix
+    u64__print_radix(%$this, 16, .hexbytes, .hexprefix, 2)
 endfn
 
-section .text
-u64__println:
-    push rbp
-    mov rbp, rsp
-    call u64__print
+fn u64__println(this: u64 = rdi):
+    u64__print(%$this)
     print_newline()
-    pop rbp
-    ret
+endfn
 
-section .text
-u64__printhexln:
-    push rbp
-    mov rbp, rsp
-    call u64__printhex
+fn u64__printhexln(this: u64 = rdi):
+    u64__printhex(%$this)
     print_newline()
-    pop rbp
-    ret
+endfn
 
-section .text
-u64__cmp:
-    push rbp
-    mov rbp, rsp
-    cmp rdi, rsi
-    pop rbp
-    ret
+fn u64__cmp(this: u64 = rdi, other: u64 = rsi):
+    cmp %$this, %$other
+endfn
 
-section .text
-u64__clone_into:
-    push rbp
-    mov rbp, rsp
+fn u64__clone_into(this: u64 = rdi):
     panic `clone_into not applicable for u64`
+endfn
 
-section .text
-u64__destroy:
-    push rbp
-    mov rbp, rsp
+fn u64__destroy(this: u64 = rdi):
     panic `destroy not applicable for u64`
+endfn
