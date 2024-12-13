@@ -13,7 +13,7 @@ section .text
 ptr__cmp:
     jmp u64__cmp
 
-fn ptr__clone_into(this: ptr = rdi):
+fn ptr__clone_into(this: ptr = rdi, other: out ptr = rsi):
     panic `clone_into not applicable for ptr`
 endfn
 

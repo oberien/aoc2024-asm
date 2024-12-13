@@ -65,8 +65,6 @@ main:
         jmp .loop
 
     .part1:
-    lea rdi, [tmparray]
-    call Array__destroy
 
     lea rdi, [string]
     String__destroy(rdi)

@@ -38,9 +38,6 @@
 %include "type_impls/Array.nasm"
 
 ; late helpers requiring fn calls to types
-%undef string
-%undef ptr
-%undef index
 %include "helpers/parse.nasm"
 
 section .text

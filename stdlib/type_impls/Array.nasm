@@ -18,158 +18,43 @@ endfn
 ; INPUT
 ; * rdi: this-ptr
 ; * rsi: u64 to push
-section .text
-Array__push_u64:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, Array
-    assert_eq [rdi + Array.element_rtti], u64_Rtti
+fn Array__push_u64(this: Array = rdi, element: u64 = rsi):
+    assert_eq %$this.element_rtti, u64_Rtti
 
-    mov rcx, [rdi + Array.len]
+    mov rcx, %$this.len
     add rcx, 1
-    cmp rcx, [rdi + Array.capacity]
+    cmp rcx, %$this.capacity
     jbe .next
     panic `Array__push_u64 not enough capacity`
 
     .next:
-    mov rcx, [rdi + Array.len]
-    inc qword [rdi + Array.len]
-    mov rdi, [rdi + Array.ptr]
+    mov rcx, %$this.len
+    inc %$this.len
+    mov rdi, %$this.ptr
     mov [rdi + rcx * 8], rsi
-
-    pop rbp
-    ret
+endfn
 
 ; INPUT:
 ; * rdi: this-ptr
 ; * rsi: pointer to element to push
-section .text
-Array__push:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, Array
-
-    mov r8, [rdi + Array.len]
+fn Array__push(this: Array = rdi, element_ptr: ptr = rsi):
+    mov r8, %$this.len
     mov rcx, r8
     add rcx, 1
-    cmp rcx, [rdi + Array.capacity]
+    cmp rcx, %$this.capacity
     jbe .next
     panic `Array__push not enough capacity`
 
     .next:
-    inc qword [rdi + Array.len]
+    inc %$this.len
 
-    mov rdx, [rdi + Array.element_rtti]
+    mov rdx, %$this.element_rtti
     mov rdx, [rdx + Rtti.size]
     imul r8, rdx
-    mov rdi, [rdi + Array.ptr]
+    mov rdi, %$this.ptr
     lea rdi, [rdi + r8]
-    memcpy(rdi, rsi, rdx)
-
-    pop rbp
-    ret
-
-; INPUT:
-; * rdi: this-ptr
-section .text
-Array__sort:
-    push rbp
-    mov rbp, rsp
-    mov rsi, 1
-    call Array__sort_direction
-    pop rbp
-    ret
-; INPUT:
-; * rdi: this-ptr
-section .text
-Array__sort_desc:
-    push rbp
-    mov rbp, rsp
-    mov rsi, -1
-    call Array__sort_direction
-    pop rbp
-    ret
-
-; INPUT:
-; * rdi: this-ptr
-; * rsi: direction (-1 descending, 1 ascending)
-section .text
-Array__sort_direction:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, Array
-    %define this r12
-    %define endindex r13
-    %define index r14
-    %define rtti r15
-    %define direction rbx
-    multipush r12, r13, r14, r15, rbx
-    mov this, rdi
-    mov rtti, [this + Array.element_rtti]
-    mov endindex, [this + Array.len]
-    mov direction, rsi
-
-    ; bubblesort
-    .loop:
-        ; check if we are done
-        cmp endindex, 1
-        jbe .end
-        mov index, 0
-        .loop2:
-            ; check if we reached the end (+1 because we compare current with next)
-            lea rdi, [index + 1]
-            cmp rdi, endindex
-            jae .loop2end
-            ; read current
-            mov rax, [rtti + Rtti.size]
-            mov rdi, [this + Array.ptr]
-            imul rax, index
-            add rdi, rax
-            mov rax, [rtti + Rtti.is_primitive]
-            test rax, rax
-            cmovnz rdi, [rdi]
-
-            ; read next
-            mov rax, [rtti + Rtti.size]
-            mov rsi, [this + Array.ptr]
-            add rsi, rax ; one element further
-            imul rax, index
-            add rsi, rax
-            mov rax, [rtti + Rtti.is_primitive]
-            test rax, rax
-            cmovnz rsi, [rsi]
-
-            ; compare
-            mov rax, [rtti + Rtti.cmp]
-            call rax
-            ; check if the comparison matches the requested direction
-            mov rax, 1
-            mov rcx, -1
-            cmovg rax, rcx
-            cmp direction, rax
-            je .loop2cont
-            ; swap
-            mov rdx, [this + Array.element_rtti]
-            mov rdx, [rdx + Rtti.size]
-            mov rcx, rdx
-            imul rcx, index
-            mov rdi, [this + Array.ptr]
-            add rdi, rcx
-            mov rsi, rdi
-            add rsi, rdx
-            memxchg(rdi, rsi, rdx)
-
-            .loop2cont:
-            inc index
-            jmp .loop2
-        .loop2end:
-        dec endindex
-        jmp .loop
-
-    .end:
-    multipop r12, r13, r14, r15, rbx
-    pop rbp
-    ret
+    memcpy(rdi, %$element_ptr, rdx)
+endfn
 
 ; INPUT:
 ; * rdi: this-ptr
@@ -177,243 +62,285 @@ Array__sort_direction:
 ; OUTPUT:
 ; * rax: element
 section .text
-Array__get:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, Array
-    %define this rdi
-
-    cmp rsi, [this + Array.len]
+fn Array__get(this: Array = rdi, index: u64 = rsi):
+    cmp %$index, %$this.len
     jb .next
     panic `Array__get index out of bounds`
 
     .next:
-    mov rax, [this + Array.rtti]
+    mov rax, %$this.element_rtti
     mov rcx, [rax + Rtti.is_primitive]
     mov rax, [rax + Rtti.size]
-    imul rax, rsi
-    add rax, [this + Array.ptr]
+    imul rax, %$index
+    add rax, %$this.ptr
     test rcx, rcx
     cmova rax, [rax]
-
-    pop rbp
-    ret
+endfn
 
 ; INPUT:
 ; * rdi: this-ptr
-section .text
-Array__remove:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, Array
-    %define this r12
-    %define element_ptr r13
-    %define element_rtti r14
-    multipush r12, r13, r14
-    mov this, rdi
-    mov element_rtti, [this + Array.element_rtti]
+; * rsi: direction (-1 descending, 1 ascending)
+fn Array__sort_direction(this: Array = reg, direction: u64 = reg):
+    vars
+        reg endindex: u64
+        reg index: u64
+        reg rtti: Rtti
+    endvars
+    mov %$rtti, %$this.element_rtti
+    mov %$endindex, %$this.len
 
-    mov element_ptr, [this + Array.ptr]
-    imul rsi, [element_rtti + Rtti.size]
-    add element_ptr, rsi
+    ; bubblesort
+    .loop:
+        ; check if we are done
+        cmp %$endindex, 1
+        jbe .end
+        mov %$index, 0
+        .loop2:
+            ; check if we reached the end (+1 because we compare current with next)
+            lea rdi, [%$index + 1]
+            cmp rdi, %$endindex
+            jae .loop2end
+            ; read current
+            Array__get(%$this, %$index)
+            push rax
+            ; read next
+            mov rsi, %$index
+            add rsi, 1 ; next element
+            Array__get(%$this, rsi)
+            mov rsi, rax
+            pop rdi
 
-    mov rax, [element_rtti + Rtti.is_primitive]
+            ; compare
+            mov rax, %$rtti.cmp
+            call rax
+            ; check if the comparison matches the requested direction
+            mov rax, 1
+            mov rcx, -1
+            cmovg rax, rcx
+            cmp %$direction, rax
+            je .loop2cont
+            ; swap
+            mov rdx, %$rtti.size
+            mov rcx, rdx
+            imul rcx, %$index
+            mov rdi, %$this.ptr
+            add rdi, rcx
+            mov rsi, rdi
+            add rsi, rdx
+            memxchg(rdi, rsi, rdx)
+
+            .loop2cont:
+            inc %$index
+            jmp .loop2
+        .loop2end:
+        dec %$endindex
+        jmp .loop
+
+    .end:
+endfn
+
+
+; INPUT:
+; * rdi: this-ptr
+fn Array__sort(this: Array = rdi):
+    Array__sort_direction(%$this, 1)
+endfn
+
+; INPUT:
+; * rdi: this-ptr
+fn Array__sort_desc(this: Array = rdi):
+    Array__sort_direction(%$this, -1)
+endfn
+
+; INPUT:
+; * rdi: this-ptr
+; * rsi: index
+fn Array__remove(this: Array = reg, index: u64 = rsi):
+    vars
+        reg element_ptr: ptr
+        reg element_rtti: Rtti
+    endvars
+    mov %$element_rtti, %$this.element_rtti
+    mov %$element_ptr, %$this.ptr
+    imul rsi, %$element_rtti.size
+    add %$element_ptr, %$index
+
+    mov rax, %$element_rtti.is_primitive
     test rax, rax
     ja .shift_rest
 
     ; destroy
-    mov rax, [element_rtti + Rtti.destroy]
-    mov rdi, element_ptr
+    mov rax, %$element_rtti.destroy
+    mov rdi, %$element_ptr
     call rax
 
     .shift_rest:
-    mov rdi, element_ptr
-    mov rsi, element_ptr
-    add rsi, [element_rtti + Rtti.size]
-    mov rdx, [this + Array.len]
-    imul rdx, [element_rtti + Rtti.size]
-    add rdx, [this + Array.ptr]
+    mov rsi, %$element_ptr
+    add rsi, %$element_rtti.size
+    mov rdx, %$this.len
+    imul rdx, %$element_rtti.size
+    add rdx, %$this.ptr
     sub rdx, rsi
-    memcpy(rdi, rsi, rdx)
+    memcpy(%$element_ptr, rsi, rdx)
 
-    sub qword [this + Array.len], 1
+    sub %$this.len, 1
+endfn
 
-    multipop r12, r13, r14
-    pop rbp
-    ret
-
-section .text
-Array__print:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, Array
-    %define this r12
-    %define len_left r13
-    %define rtti r14
-    %define ptr r15
-    push r12
-    push r13
-    push r14
-    push r15
-    mov this, rdi
-    mov len_left, [this + Array.len]
-    mov ptr, [this + Array.ptr]
-    mov rtti, [rdi + Array.element_rtti]
+fn Array__print(this: Array = reg):
+    vars
+        reg index: u64
+        reg rtti: Rtti
+    endvars
+    mov %$rtti, %$this.element_rtti
 
     rodata_cstring .open, `[`
     rodata_cstring .comma, `, `
-    mov rdi, .open
-    call cstring__print
+    cstring__print(.open)
 
+    mov %$index, 0
     .loop:
-        test len_left, len_left
-        jz .end
-        mov rdi, ptr
-        mov rax, [rtti + Rtti.is_primitive]
-        test rax, rax
-        cmovnz rdi, [rdi]
-
-        mov rax, [rtti + Rtti.print]
+        cmp %$index, %$this.len
+        jae .end
+        Array__get(%$this, %$index)
+        mov rdi, rax
+        mov rax, %$rtti.print
         call rax
-
-        mov rdi, .comma
-        call cstring__print
-
-        add ptr, [rtti + Rtti.size]
-        dec len_left
+        cstring__print(.comma)
+        add %$index, 1
         jmp .loop
 
     .end:
     rodata_cstring .close, `]`
-    mov rdi, .close
-    call cstring__print
+    cstring__print(.close)
+endfn
 
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop rbp
-    ret
-
-section .text
-Array__println:
-    push rbp
-    mov rbp, rsp
-    call Array__print
+fn Array__println(this: Array = rdi):
+    Array__print(%$this)
     print_newline()
-    pop rbp
-    ret
+endfn
 
-section .text
-Array__cmp:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, Array
-    check_rtti rsi, Array
-    %define this r12
-    %define other r13
-    %define compare r14
-    %define size r15
-    %define len rbx
-    multipush r12, r13, r14, r15, rbx
-    mov this, rdi
-    mov other, rsi
+fn Array__cmp(this: Array = reg, other: Array = reg):
+    vars
+        reg compare: ptr
+        reg size: u64
+        reg len: u64
+    endvars
 
-    mov rax, [this + Array.element_rtti]
-    mov rdx, [other + Array.element_rtti]
+    Rtti__cmp(%$this.element_rtti, %$other.element_rtti)
+    je .rtti_matches
+    panic `Array__cmp called with different element-Rtti`
 
+    .rtti_matches:
+    mov rax, %$this.element_rtti
+    mov %$size, [rax + Rtti.size]
+    mov %$compare, [rax + Rtti.cmp]
 
     mov rax, [rax + Rtti.is_primitive]
     test rax, rax
     jz .not_primitive
 
-    mov rdi, [this + Array.ptr]
-    mov rsi, [this + Array.len]
-    mov rdx, [other + Array.ptr]
-    mov rcx, [other + Array.len]
-    memcmp_with_lens(rdi, rsi, rdx, rcx)
+
+    mov rsi, %$this.len
+    imul rsi, %$size
+    mov rcx, %$other.len
+    imul rcx, %$size
+    memcmp_with_lens(%$this.ptr, rsi, %$other.ptr, rcx)
     jmp .end
 
     .not_primitive:
-    mov size, [rax + Rtti.size]
-    mov compare, [rax + Rtti.cmp]
-    mov len, [this + Array.len]
-    min len, [other + Array.len]
-    ; `this` and `other` are now ptr
-    mov this, [this + Array.ptr]
+    mov %$len, %$this.len
+    min %$len, %$other.len
+    ; `%$this` and `%$other` are now ptr
+    mov %$this, %$this.ptr
+    mov %$other, %$other.ptr
+    .loop:
+        test %$len, %$len
+        jz .equals
+        mov rdi, %$this
+        mov rsi, %$other
+        call %$compare
+        jne .end
+        add rdi, %$size
+        add rsi, %$size
+        jmp .loop
 
-
-
+    .equals:
+    cmp eax, eax
     .end:
-    multipop r12, r13, r14, r15, rbx
-    pop rbp
-    ret
+endfn
 
-section .text
-Array__clone_into:
-    push rbp
-    mov rbp, rsp
-    %define ptr r12
-    %define other_ptr r13
-    %define len r14
-    %define size r15
-    %define clone_into rbx
-    multipush r12, r13, r14, r15, rbx
-    push rsi
-    mov ptr, [rdi + Array.ptr]
-    mov len, [rdi + Array.len]
-    mov rsi, [rdi + Array.element_rtti]
-    mov size, [rsi + Rtti.size]
-    mov clone_into, [rsi + Rtti.clone_into]
+fn Array__clone_into(this: Array = rdi, other: &out Array):
+    vars
+        reg ptr: ptr
+        reg other_ptr: ptr
+        reg len: u64
+        reg size: u64
+        reg clone_into: ptr
+        local is_primitive: u64
+    endvars
+    mov %$ptr, %$this.ptr
+    mov %$len, %$this.len
+    mov rsi, %$this.element_rtti
+    mov %$size, [rsi + Rtti.size]
+    mov %$clone_into, [rsi + Rtti.clone_into]
     mov rax, [rsi + Rtti.is_primitive]
-    push rax
+    mov %$is_primitive, rax
 
-    mov rdx, [rdi + Array.capacity]
-    mov rdi, [rsp + 0x8]
-    call Array__with_capacity
-    pop rax
-    pop rsi
-    mov other_ptr, [rsi + Array.ptr]
-    mov [rsi + Array.len], len
+    mov rdx, %$this.capacity
+    Array__with_capacity(%$other, rsi, rdx)
+    mov rsi, %$other
+    mov %$other_ptr, [rsi + Array.ptr]
+    mov [rsi + Array.len], %$len
 
+    mov rax, %$is_primitive
     test rax, rax
     jz .non_primitive
 
     ; primitive -> memcpy
-    mov rdi, other_ptr
-    mov rsi, ptr
-    mov rdx, len
-    imul rdx, size
-    memcpy(rdi, rsi, rdx)
+    mov rdx, %$len
+    imul rdx, %$size
+    memcpy(%$other_ptr, %$ptr, rdx)
     jmp .end
 
     .non_primitive:
-        test len, len
+        test %$len, %$len
         jz .end
 
-        mov rdi, ptr
-        mov rsi, other_ptr
-        call clone_into
+        mov rdi, %$ptr
+        mov rsi, %$other_ptr
+        call %$clone_into
 
-        sub len, 1
-        add ptr, size
-        add other_ptr, size
+        sub %$len, 1
+        add %$ptr, %$size
+        add %$other_ptr, %$size
         jmp .non_primitive
 
     .end:
-    multipop r12, r13, r14, r15, rbx
-    pop rbp
-    ret
+endfn
 
-section .text
-Array__destroy:
-    push rbp
-    mov rbp, rsp
-    check_rtti rdi, Array
-    mov rsi, [rdi + Array.element_rtti]
-    mov rsi, [rsi + Rtti.size]
-    imul rsi, [rdi + Array.capacity]
-    mov rdi, [rdi + Array.ptr]
-    free(rdi, rsi)
-    pop rbp
-    ret
+fn Array__destroy(this: Array = reg):
+    vars
+        reg rtti: Rtti
+        reg destroy: ptr
+    endvars
+    mov %$rtti, %$this.rtti
+    mov %$destroy, %$rtti.destroy
+
+    cmp %$rtti.is_primitive, 1
+    je .end
+
+    ; destroy non-primitive elements starting from the end
+    .loop:
+        cmp %$this.len, 0
+        je .end
+        sub %$this.len, 1
+        Array__get(%$this, %$this.len)
+        mov rdi, rax
+        call %$destroy
+        jmp .loop
+
+    .end:
+    mov rsi, %$rtti.size
+    imul rsi, %$this.capacity
+    free(%$this.ptr, rsi)
+endfn

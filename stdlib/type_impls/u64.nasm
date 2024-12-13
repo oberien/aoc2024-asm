@@ -10,13 +10,13 @@
 fn u64__print_radix(number: u64 = reg, radix: u64 = reg, alphabet: ptr = reg, prefix: ptr = rcx, prefix_len: u64 = r8)
     ; 64bit integers have up to 19 decimal digits
     ; 8-byte stack alignment -> 24 bytes
+    ; String has 32 bytes -> works here
     vars
-        local first: u64
-        local second: u64
-        local third: u64
+        local dummy: String
     endvars
     %define %$len rcx
-    %define %$content rbp
+    %define %$content r9
+    lea %$content, [%$dummy]
 
     ; print prefix
     write_all(STDOUT, %$prefix, %$prefix_len)
@@ -71,7 +71,7 @@ fn u64__cmp(this: u64 = rdi, other: u64 = rsi):
     cmp %$this, %$other
 endfn
 
-fn u64__clone_into(this: u64 = rdi):
+fn u64__clone_into(this: u64 = rdi, other: out u64 = rsi):
     panic `clone_into not applicable for u64`
 endfn
 

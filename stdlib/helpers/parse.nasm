@@ -87,10 +87,7 @@ fn parse_line_as_u64_array(string: String = reg, index: u64 = reg, out_array: &o
 
         atoi(%$string, %$index)
         mov %$index, rsi
-
-        mov rdi, %$out_array
-        mov rsi, rax
-        call Array__push_u64
+        Array__push_u64(%$out_array, rax)
 
         jmp .loop
 
