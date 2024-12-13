@@ -5,12 +5,8 @@
 ; keyword for searching: strlen
 ; OUTPUT:
 ; * rax: length without the trailing nul-byte
-section .text
-cstring__len:
-    push rbp
-    mov rbp, rsp
-
-    mov rsi, rdi
+fn cstring__len(this: cstring = rdi):
+    mov rsi, %$this
 
     xor ecx, ecx
     dec rcx
@@ -20,74 +16,37 @@ cstring__len:
     sub rdi, rsi
     dec rdi
     mov rax, rdi
+endfn
 
-    pop rbp
-    ret
+fn cstring__print(this: cstring = reg):
+    cstring__len(%$this)
+    write_all(STDOUT, %$this, rax)
+endfn
 
-section .text
-cstring__print:
-    push rbp
-    mov rbp, rsp
-    push r12
-
-    mov r12, rdi
-    call cstring__len
-    mov rdi, STDOUT
-    mov rsi, r12
-    mov rdx, rax
-    write_all(rdi, rsi, rdx)
-
-    pop r12
-    pop rbp
-    ret
-
-section .text
-cstring__println:
-    push rbp
-    mov rbp, rsp
-    call cstring__print
+fn cstring__println(this: cstring = rdi):
+    cstring__print(%$this)
     print_newline()
-    pop rbp
-    ret
+endfn
 
-section .text
-cstring__cmp:
-    push rbp
-    mov rbp, rsp
-    %define this r12
-    %define other r13
-    %define this_len r14
-    %define other_len r15
-    multipush r12, r13, r14, r15
-    mov this, rdi
-    mov other, rsi
+fn cstring__cmp(this: cstring = reg, other: cstring = reg):
+    vars
+        reg this_len: u64
+        reg other_len: u64
+    endvars
 
-    mov rdi, this
-    call cstring__len
-    mov this_len, rax
+    cstring__len(%$this)
+    mov %$this_len, rax
 
-    mov rdi, other
-    call cstring__len
-    mov other_len, rax
+    cstring__len(%$other)
+    mov %$other_len, rax
 
-    mov rdi, this
-    mov rsi, this_len
-    mov rdx, other
-    mov rcx, other_len
-    memcmp_with_lens(rdi, rsi, rdx, rcx)
+    memcmp_with_lens(%$this, %$this_len, %$other, %$other_len)
+endfn
 
-    multipop r12, r13, r14, r15
-    pop rbp
-    ret
-
-section .text
-cstring__clone_into:
-    push rbp
-    mov rbp, rsp
+fn cstring__clone_into(this: cstring = rdi):
     panic `clone_into not applicable for cstring`
+endfn
 
-section .text
-cstring__destroy:
-    push rbp
-    mov rbp, rsp
+fn cstring__destroy(this: cstring = rdi):
     panic `destroy not applicable for cstring`
+endfn
