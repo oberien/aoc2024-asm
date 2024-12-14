@@ -1,162 +1,3 @@
-%macro syscall_1 2
-    mov rdi, %2
-    call %1
-%endmacro
-%macro syscall_2 3
-    mov rdi, %2
-    mov rsi, %3
-    call %1
-%endmacro
-%macro syscall_3 4
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
-    call %1
-%endmacro
-%macro syscall_4 5
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
-    mov r10, %5
-    call %1
-%endmacro
-%macro syscall_5 6
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
-    mov r10, %5
-    mov r8, %6
-    call %1
-%endmacro
-%macro syscall_6 7
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
-    mov r10, %5
-    mov r8, %6
-    mov r9, %7
-    call %1
-%endmacro
-
-%macro call_0 1
-    call %1
-%endmacro
-%macro call_1 2
-    mov rdi, %2
-    call %1
-%endmacro
-%macro call_2 3
-    mov rdi, %2
-    mov rsi, %3
-    call %1
-%endmacro
-%macro call_3 4
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
-    call %1
-%endmacro
-%macro call_4 5
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
-    mov rcx, %5
-    call %1
-%endmacro
-%macro call_5 6
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
-    mov rcx, %5
-    mov r8, %6
-    call %1
-%endmacro
-%macro call_6 7
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
-    mov rcx, %5
-    mov r8, %6
-    mov r9, %7
-    call %1
-%endmacro
-
-%macro index_of 2
-    %strlen len %1
-    %strlen needle_len %2
-    %assign i 0
-    %rep len+1
-        %substr to_test %1 i,needle_len
-        %ifidn to_test, %2
-            %exitrep
-        %endif
-        %assign i i+1
-    %endrep
-
-    %xdefine retval i
-    %undef i
-    %undef to_test
-    %undef len
-    %undef needle_len
-%endmacro
-
-%macro strip_char 2
-    %push
-    %strlen %$len %1
-    %assign %$index 0
-
-    ; from the front
-    %rep %$len
-        %substr %$char %1 %$index,1
-        %ifnidn %$char, %2
-            %exitrep
-        %endif
-        %assign %$index %$index+1
-    %endrep
-
-    %substr retval %1 %$index,-1
-    %pop
-%endmacro
-
-%macro strip_char_end 2
-    %push
-    %strlen %$len %1
-    %assign %$index %$len
-
-    ; from the end
-    %assign %$index %$len
-    %rep %$len
-        %substr %$char %1 %$index, 1
-        %ifnidn %$char, %2
-            %exitrep
-        %endif
-        %assign %$index %$index-1
-    %endrep
-
-    %substr retval %1 0,%$index
-    %pop
-%endmacro
-
-%macro string_to_instructions 1
-    %xdefine input %1
-    %strlen len input
-
-    %rep len
-        index_of input, `\n`
-        %substr instruction input 0,retval-1
-        %if retval == 0
-            %exitrep
-        %endif
-        %substr input input retval+1,-1
-        %deftok instruction instruction
-        instruction
-    %endrep
-
-    %undef instruction
-    %undef len
-    %undef input
-%endmacro
-
 %macro parse_arg 1
     ; <name>: [&[out]] <type> [= register]
     ; `&` is only allowed for non-primitive types
@@ -175,7 +16,7 @@
     ; * arg_is_in_arg_register: if the argument should be referred to in its argument-register
     ; * arg_is_in_nv_register: if the argument should be moved to a non-volatile register
 
-    index_of %1, ':'
+    mstring_index_of %1, ':'
     %substr arg_name_str %1 0,retval-1
     %substr arg_type_str %1 retval+1,-1
 
@@ -220,7 +61,7 @@
     %assign arg_is_in_register 0
     %assign arg_is_in_arg_register 0
     %assign arg_is_in_nv_register 0
-    index_of arg_type_str, '='
+    mstring_index_of arg_type_str, '='
     %strlen arg_type_str_len arg_type_str
     %if retval-1 != arg_type_str_len
         %assign arg_is_in_register 1
@@ -264,9 +105,9 @@
     %xdefine %$__localsize 0
 
     %defstr input %1
-    index_of input, '('
+    mstring_index_of input, '('
     %xdefine open retval
-    index_of input, ')'
+    mstring_index_of input, ')'
     %xdefine close retval
     %substr name input 0,open-1
     %substr args input open+1,close-open-1
@@ -295,7 +136,7 @@
         %endif
         %undef len
         %assign num_args num_args+1
-        index_of args, ','
+        mstring_index_of args, ','
         %substr arg args 0,retval-1
         %substr args args retval+1,-1
 
@@ -394,7 +235,7 @@
 
 %macro local 1+
     %defstr input %1
-    index_of input, ':'
+    mstring_index_of input, ':'
     %substr name input 0,retval-1
     %substr type_str input retval+1,-1
     strip_char type_str, ' '
@@ -428,7 +269,7 @@
     %substr %$__regs %$__regs 4,-1
     %strcat %$__regs_to_push %$__regs_to_push, ", ", reg
 
-    index_of input, ':'
+    mstring_index_of input, ':'
     %substr name input 0,retval-1
     %substr type_str input retval+1,-1
     strip_char type_str, ' '

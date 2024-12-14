@@ -1,4 +1,6 @@
 ; simple helper macros
+%include "macros/macro_string_ops.nasm"
+%include "macros/call.nasm"
 %include "macros/rtti.nasm"
 %include "macros/types.nasm"
 %include "macros/fn.nasm"
