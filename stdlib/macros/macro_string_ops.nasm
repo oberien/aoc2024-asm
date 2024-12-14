@@ -18,6 +18,20 @@
     %undef needle_len
 %endmacro
 
+; string, index
+; assumes the string is a list of comma-separated elements
+; returns the nth element (0-indexed)
+%macro marray_get 2
+    %xdefine substring %1
+    %rep %2
+        mstring_index_of substring, ','
+        %substr substring substring retval+1,-1
+    %endrep
+    mstring_index_of substring, ','
+    %substr retval substring 0,retval-1
+    %undef substring
+%endmacro
+
 ; string, char
 ; strips all instances of `char` from the start of the string
 %macro strip_char 2
@@ -80,4 +94,3 @@
     %undef len
     %undef input
 %endmacro
-

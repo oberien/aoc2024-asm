@@ -123,7 +123,7 @@
     %assign num_args 0
     %xdefine nv_arg_instructions ""
     %xdefine args_with_comma ""
-    %rep 100
+    %rep 10
         strip_char args, ' '
         strip_char retval, ','
         strip_char retval, ' '
