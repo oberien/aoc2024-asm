@@ -21,19 +21,19 @@
     %substr arg_type_str %1 retval+1,-1
 
     ; strip whitespace off name and type
-    strip_char arg_name_str, ' '
+    mstring_strip_char arg_name_str, ' '
     %xdefine arg_name_str retval
-    strip_char arg_type_str, ' '
+    mstring_strip_char arg_type_str, ' '
     %xdefine arg_type_str retval
 
     ; check if there is the argument is a reference
-    strip_char arg_type_str, '&'
+    mstring_strip_char arg_type_str, '&'
     %ifidn arg_type_str, retval
         %assign arg_type_is_ref 0
     %else
         %assign arg_type_is_ref 1
     %endif
-    strip_char retval, ' '
+    mstring_strip_char retval, ' '
     %xdefine arg_type_str retval
 
     ; check if this is an out-parameter
@@ -42,7 +42,7 @@
     %ifidn arg_type_is_out, "out"
         %assign arg_type_is_out 1
         %substr arg_type_str arg_type_str 4,-1
-        strip_char arg_type_str, ' '
+        mstring_strip_char arg_type_str, ' '
         %xdefine arg_type_str retval
     %endif
 
@@ -53,7 +53,7 @@
     %endif
     %substr arg_reg_str arg_regs 0,3
     %substr arg_regs arg_regs 4,-1
-    strip_char_end arg_reg_str, ' '
+    mstring_strip_char_end arg_reg_str, ' '
     %xdefine arg_reg_str retval
     %deftok arg_reg arg_reg_str
 
@@ -68,11 +68,11 @@
 
         %substr arg_is_in_arg_register arg_type_str retval+1,-1
         %substr arg_type_str arg_type_str 0,retval-1
-        strip_char_end arg_type_str, ' '
+        mstring_strip_char_end arg_type_str, ' '
         %xdefine arg_type_str retval
 
-        strip_char arg_is_in_arg_register, ' '
-        strip_char_end retval, ' '
+        mstring_strip_char arg_is_in_arg_register, ' '
+        mstring_strip_char_end retval, ' '
         %xdefine arg_is_in_arg_register retval
 
         %ifidn arg_is_in_arg_register, "reg"
@@ -124,9 +124,9 @@
     %xdefine nv_arg_instructions ""
     %xdefine args_with_comma ""
     %rep 10
-        strip_char args, ' '
-        strip_char retval, ','
-        strip_char retval, ' '
+        mstring_strip_char args, ' '
+        mstring_strip_char retval, ','
+        mstring_strip_char retval, ' '
         %xdefine args retval
         ; split off next argument from arguments
         %strlen len args
@@ -200,10 +200,10 @@
         %endif
     %endrep
 
-    string_to_instructions nv_arg_instructions
+    mstring_to_instructions nv_arg_instructions
 
     %deftok args_with_comma_leading args_with_comma
-    strip_char args_with_comma, ','
+    mstring_strip_char args_with_comma, ','
     %deftok args_with_comma retval
     %xdefine %[name](%[args_with_comma]) call_%[num_args] %[name] %[args_with_comma_leading]
 
@@ -238,7 +238,7 @@
     mstring_index_of input, ':'
     %substr name input 0,retval-1
     %substr type_str input retval+1,-1
-    strip_char type_str, ' '
+    mstring_strip_char type_str, ' '
     %xdefine type_str retval
 
     %deftok type type_str
@@ -272,7 +272,7 @@
     mstring_index_of input, ':'
     %substr name input 0,retval-1
     %substr type_str input retval+1,-1
-    strip_char type_str, ' '
+    mstring_strip_char type_str, ' '
     %xdefine type_str retval
 
     %deftok type type_str
@@ -299,7 +299,7 @@
         sub rsp, %$__localsize
     %endif
     %ifnidn %$__regs_to_push, ""
-        strip_char %$__regs_to_push, ','
+        mstring_strip_char %$__regs_to_push, ','
         %xdefine %$__regs_to_push retval
         %deftok regs_to_push_tok %$__regs_to_push
         multipush regs_to_push_tok
@@ -333,7 +333,7 @@
         %if has_locals
             add rsp, %$__localsize
         %endif
-        strip_char %$__arg_nvregs_to_pop, ','
+        mstring_strip_char %$__arg_nvregs_to_pop, ','
         %deftok %$__arg_nvregs_to_pop retval
         multipop %$__arg_nvregs_to_pop
         %if has_pushed_args

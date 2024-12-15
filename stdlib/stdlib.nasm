@@ -1,5 +1,8 @@
 ; simple helper macros
 %include "macros/macro_string_ops.nasm"
+%include "macros/parse_condition.nasm"
+%include "macros/macro_array_ops.nasm"
+%include "macros/if.nasm"
 %include "macros/call.nasm"
 %include "macros/rtti.nasm"
 %include "macros/types.nasm"

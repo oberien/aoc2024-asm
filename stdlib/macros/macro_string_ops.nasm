@@ -1,40 +1,40 @@
-; haystack: string, needle: string
-%macro mstring_index_of 2
-    %strlen len %1
-    %strlen needle_len %2
-    %assign i 0
-    %rep len+1
-        %substr to_test %1 i,needle_len
-        %ifidn to_test, %2
+; haystack: string, needle: string, direction: -1 or +1
+%macro mstring_index_of_direction 3
+    %push
+    %strlen %$len %1
+    %strlen %$needle_len %2
+    %assign %$direction %3
+    %if %$direction == 1
+        %assign %$index 0
+    %elif %$direction == -1
+        %assign %$index %$len
+    %else
+        %error "mstring_index_of direction must be -1 or +1"
+    %endif
+    %rep %$len+1
+        %substr %$to_test %1 %$index,%$needle_len
+        %ifidn %$to_test, %2
             %exitrep
         %endif
-        %assign i i+1
+        %assign %$index %$index + %$direction
     %endrep
 
-    %xdefine retval i
-    %undef i
-    %undef to_test
-    %undef len
-    %undef needle_len
+    %xdefine retval %$index
+    %pop
+%endmacro
+; haystack: string, needle: string
+%macro mstring_index_of 2
+    mstring_index_of_direction %1, %2, 1
 %endmacro
 
-; string, index
-; assumes the string is a list of comma-separated elements
-; returns the nth element (0-indexed)
-%macro marray_get 2
-    %xdefine substring %1
-    %rep %2
-        mstring_index_of substring, ','
-        %substr substring substring retval+1,-1
-    %endrep
-    mstring_index_of substring, ','
-    %substr retval substring 0,retval-1
-    %undef substring
+; haystack: string, needle: string
+%macro mstring_index_of_last 2
+    mstring_index_of_direction %1, %2, -1
 %endmacro
 
 ; string, char
 ; strips all instances of `char` from the start of the string
-%macro strip_char 2
+%macro mstring_strip_char 2
     %push
     %strlen %$len %1
     %assign %$index 0
@@ -54,7 +54,7 @@
 
 ; string, char
 ; strips all instances of `char` from the end of the string
-%macro strip_char_end 2
+%macro mstring_strip_char_end 2
     %push
     %strlen %$len %1
     %assign %$index %$len
@@ -73,24 +73,32 @@
     %pop
 %endmacro
 
-; string
-; converts a newline-character separated instructions into their actual instructions
-%macro string_to_instructions 1
-    %xdefine input %1
-    %strlen len input
+; string to strip leading `(` and trailing `)` from
+%macro mstring_strip_parens 1
+    mstring_strip_char %1, ' '
+    mstring_strip_char retval, '('
+    mstring_strip_char_end retval, ' '
+    mstring_strip_char_end retval, ')'
+%endmacro
 
-    %rep len
-        mstring_index_of input, `\n`
-        %substr instruction input 0,retval-1
+; string
+; converts a newline-character separated instruction-string into the actual instructions
+%macro mstring_to_instructions 1
+    %xdefine input__ %1
+    %strlen len__ input__
+
+    %rep len__
+        mstring_index_of input__, `\n`
+        %substr instruction__ input__ 0,retval-1
         %if retval == 0
             %exitrep
         %endif
-        %substr input input retval+1,-1
-        %deftok instruction instruction
-        instruction
+        %substr input__ input__ retval+1,-1
+        %deftok instruction__ instruction__
+        instruction__
     %endrep
 
-    %undef instruction
-    %undef len
-    %undef input
+    %undef instruction__
+    %undef len__
+    %undef input__
 %endmacro

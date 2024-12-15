@@ -1,5 +1,5 @@
-%define SYSV64ARGREGS "rdi,rsi,rdx,rcx,r8,r9"
-%define SYSCALLARGREGS "rdi,rsi,rdx,r10,r8,r9"
+%define SYSV64ARGREGS() "rdi,rsi,rdx,rcx,r8,r9"
+%define SYSCALLARGREGS() "rdi,rsi,rdx,r10,r8,r9"
 
 ; function name, register-string, args...
 %macro call_n 2-*
