@@ -323,7 +323,7 @@ fn Array__destroy(this: Array = reg):
         reg rtti: Rtti
         reg destroy: ptr
     endvars
-    mov %$rtti, %$this.rtti
+    mov %$rtti, %$this.element_rtti
     mov %$destroy, %$rtti.destroy
 
     cmp %$rtti.is_primitive, 1
@@ -333,10 +333,12 @@ fn Array__destroy(this: Array = reg):
     .loop:
         cmp %$this.len, 0
         je .end
-        sub %$this.len, 1
+        mov rax, %$this.len
+        sub rax, 1
         Array__get(%$this, %$this.len)
         mov rdi, rax
         call %$destroy
+        sub %$this.len, 1
         jmp .loop
 
     .end:
