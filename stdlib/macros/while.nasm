@@ -15,6 +15,18 @@
     parse_condition retval, .__while%[__WHILE_COUNT__]_end
 %endmacro
 
+%macro continuewhile 0
+    marray_last __WHILE_STACK__
+    %deftok retval retval
+    jmp .__while%[retval]
+%endmacro
+
+%macro breakwhile 0
+    marray_last __WHILE_STACK__
+    %deftok retval retval
+    jmp .__while%[retval]_end
+%endmacro
+
 %macro endwhile 0
     marray_pop __WHILE_STACK__
     %deftok retval retval
