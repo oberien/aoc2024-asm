@@ -49,27 +49,27 @@
 
 section .text
 global _start
-_start:
-    push rbp
-    mov rbp, rsp
-    %define args rbp - Array_size
-    %define argc r12
-    %define argv r13
-    sub rsp, Array_size
+fn _start():
+    vars
+        local args: Array
+        reg argc: u64
+        reg argv: ptr
+    endvars
 
     ; create Array<cstring> from arguments
-    mov argc, [rbp + 0x8]
-    lea argv, [rbp + 0x10]
-    mov qword [args + Array.rtti], Array_Rtti
-    mov qword [args + Array.element_rtti], Array_Rtti
-    mov qword [args + Array.ptr], argv
-    mov qword [args + Array.len], argc
-    mov qword [args + Array.capacity], argc
+    mov %$argc, [rbp + 0x8]
+    lea %$argv, [rbp + 0x10]
+    mov qword %$args.rtti, Array_Rtti
+    mov qword %$args.element_rtti, cstring_Rtti
+    mov qword %$args.ptr, %$argv
+    mov qword %$args.len, %$argc
+    mov qword %$args.capacity, %$argc
 
-    lea rdi, [args]
+    lea rdi, [%$args]
     call main
 
     syscall_exit(rax)
 
     ; no stack cleanup needed
     ; we are using the ultimate garbage collector -- the kernel
+endfn
