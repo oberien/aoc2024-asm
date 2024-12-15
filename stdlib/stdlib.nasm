@@ -3,6 +3,7 @@
 %include "macros/parse_condition.nasm"
 %include "macros/macro_array_ops.nasm"
 %include "macros/if.nasm"
+%include "macros/for.nasm"
 %include "macros/call.nasm"
 %include "macros/rtti.nasm"
 %include "macros/types.nasm"
