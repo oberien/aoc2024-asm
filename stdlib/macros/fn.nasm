@@ -3,91 +3,91 @@
     ; `&` is only allowed for non-primitive types
 
     ; requires the following variables to exist:
-    ; * arg_regs
+    ; * arg_regs__
 
     ; defines the following names:
-    ; * arg_name_str
-    ; * arg_type_str
-    ; * arg_type_is_ref: 1 if yes, 0 otherwise
-    ; * arg_type_is_out: 1 if yes, 0 otherwise
-    ; * arg_reg: register the argument is passed in
-    ; * arg_reg_str: register the argument is passed in as string
-    ; * arg_is_in_register: if the argument is referred to in a register (either nv-reg or arg-reg)
-    ; * arg_is_in_arg_register: if the argument should be referred to in its argument-register
-    ; * arg_is_in_nv_register: if the argument should be moved to a non-volatile register
+    ; * arg_name_str__
+    ; * arg_type_str__
+    ; * arg_type_is_ref__: 1 if yes, 0 otherwise
+    ; * arg_type_is_out__: 1 if yes, 0 otherwise
+    ; * arg_reg__: register the argument is passed in
+    ; * arg_reg_str__: register the argument is passed in as string
+    ; * arg_is_in_register__: if the argument is referred to in a register (either nv-reg or arg-reg)
+    ; * arg_is_in_arg_register__: if the argument should be referred to in its argument-register
+    ; * arg_is_in_nv_register__: if the argument should be moved to a non-volatile register
 
     mstring_index_of %1, ':'
-    %substr arg_name_str %1 0,retval-1
-    %substr arg_type_str %1 retval+1,-1
+    %substr arg_name_str__ %1 0,retval-1
+    %substr arg_type_str__ %1 retval+1,-1
 
     ; strip whitespace off name and type
-    mstring_strip_char arg_name_str, ' '
-    %xdefine arg_name_str retval
-    mstring_strip_char arg_type_str, ' '
-    %xdefine arg_type_str retval
+    mstring_strip_char arg_name_str__, ' '
+    %xdefine arg_name_str__ retval
+    mstring_strip_char arg_type_str__, ' '
+    %xdefine arg_type_str__ retval
 
     ; check if there is the argument is a reference
-    mstring_strip_char arg_type_str, '&'
-    %ifidn arg_type_str, retval
-        %assign arg_type_is_ref 0
+    mstring_strip_char arg_type_str__, '&'
+    %ifidn arg_type_str__, retval
+        %assign arg_type_is_ref__ 0
     %else
-        %assign arg_type_is_ref 1
+        %assign arg_type_is_ref__ 1
     %endif
     mstring_strip_char retval, ' '
-    %xdefine arg_type_str retval
+    %xdefine arg_type_str__ retval
 
     ; check if this is an out-parameter
-    %assign arg_type_is_out 0
-    %substr arg_type_is_out arg_type_str 0,3
-    %ifidn arg_type_is_out, "out"
-        %assign arg_type_is_out 1
-        %substr arg_type_str arg_type_str 4,-1
-        mstring_strip_char arg_type_str, ' '
-        %xdefine arg_type_str retval
+    %assign arg_type_is_out__ 0
+    %substr arg_type_is_out__ arg_type_str__ 0,3
+    %ifidn arg_type_is_out__, "out"
+        %assign arg_type_is_out__ 1
+        %substr arg_type_str__ arg_type_str__ 4,-1
+        mstring_strip_char arg_type_str__, ' '
+        %xdefine arg_type_str__ retval
     %endif
 
     ; get argument register according to sysv64
-    %ifidn arg_regs, ""
+    %ifidn arg_regs__, ""
         %error "only 0-6 arguments supported"
         %exitrep
     %endif
-    %substr arg_reg_str arg_regs 0,3
-    %substr arg_regs arg_regs 4,-1
-    mstring_strip_char_end arg_reg_str, ' '
-    %xdefine arg_reg_str retval
-    %deftok arg_reg arg_reg_str
+    %substr arg_reg_str__ arg_regs__ 0,3
+    %substr arg_regs__ arg_regs__ 4,-1
+    mstring_strip_char_end arg_reg_str__, ' '
+    %xdefine arg_reg_str__ retval
+    %deftok arg_reg__ arg_reg_str__
 
     ; check if the argument should stay in the register / the register should not be pushed
-    %assign arg_is_in_register 0
-    %assign arg_is_in_arg_register 0
-    %assign arg_is_in_nv_register 0
-    mstring_index_of arg_type_str, '='
-    %strlen arg_type_str_len arg_type_str
-    %if retval-1 != arg_type_str_len
-        %assign arg_is_in_register 1
+    %assign arg_is_in_register__ 0
+    %assign arg_is_in_arg_register__ 0
+    %assign arg_is_in_nv_register__ 0
+    mstring_index_of arg_type_str__, '='
+    %strlen arg_type_str_len__ arg_type_str__
+    %if retval-1 != arg_type_str_len__
+        %assign arg_is_in_register__ 1
 
-        %substr arg_is_in_arg_register arg_type_str retval+1,-1
-        %substr arg_type_str arg_type_str 0,retval-1
-        mstring_strip_char_end arg_type_str, ' '
-        %xdefine arg_type_str retval
+        %substr arg_is_in_arg_register__ arg_type_str__ retval+1,-1
+        %substr arg_type_str__ arg_type_str__ 0,retval-1
+        mstring_strip_char_end arg_type_str__, ' '
+        %xdefine arg_type_str__ retval
 
-        mstring_strip_char arg_is_in_arg_register, ' '
+        mstring_strip_char arg_is_in_arg_register__, ' '
         mstring_strip_char_end retval, ' '
-        %xdefine arg_is_in_arg_register retval
+        %xdefine arg_is_in_arg_register__ retval
 
-        %ifidn arg_is_in_arg_register, "reg"
-            %assign arg_is_in_arg_register 0
-            %assign arg_is_in_nv_register 1
+        %ifidn arg_is_in_arg_register__, "reg"
+            %assign arg_is_in_arg_register__ 0
+            %assign arg_is_in_nv_register__ 1
         %else
-            %ifnidn arg_is_in_arg_register, arg_reg_str
-                %strcat error_msg "Argument `", arg_name_str, "` must be in register `", arg_reg_str, "` and not `", arg_is_in_arg_register, "`"
-                %error error_msg
+            %ifnidn arg_is_in_arg_register__, arg_reg_str__
+                %strcat error_msg__ "Argument `", arg_name_str__, "` must be in register `", arg_reg_str__, "` and not `", arg_is_in_arg_register__, "`"
+                %error error_msg__
             %endif
-            %assign arg_is_in_arg_register 1
-            %assign arg_is_in_nv_register 0
+            %assign arg_is_in_arg_register__ 1
+            %assign arg_is_in_nv_register__ 0
         %endif
     %endif
-    %undef arg_type_str_len
+    %undef arg_type_str_len__
 %endmacro
 
 ; stored non-volatile registers == %$__regs_to_push
@@ -104,159 +104,158 @@
     %xdefine %$__arg_nvregs_to_pop ""
     %xdefine %$__localsize 0
 
-    %defstr input %1
-    mstring_index_of input, '('
-    %xdefine open retval
-    mstring_index_of input, ')'
-    %xdefine close retval
-    %substr name input 0,open-1
-    %substr args input open+1,close-open-1
+    %defstr input__ %1
+    mstring_index_of input__, '('
+    %xdefine open__ retval
+    mstring_index_of input__, ')'
+    %xdefine close__ retval
+    %substr name__ input__ 0,open__-1
+    %substr args__ input__ open__+1,close__-open__-1
 
-    %deftok name name
-    %xdefine arg_regs "rdirsirdxrcxr8 r9 "
+    %deftok name__ name__
+    %xdefine arg_regs__ "rdirsirdxrcxr8 r9 "
     section .text
-    name:
+    name__:
         push rbp
         mov rbp, rsp
 
     ; parse args
-    %assign num_args 0
-    %xdefine nv_arg_instructions ""
-    %xdefine args_with_comma ""
+    %assign num_args__ 0
+    %xdefine nv_arg_instructions__ ""
+    %xdefine args_with_comma__ ""
     %rep 10
-        mstring_strip_char args, ' '
+        mstring_strip_char args__, ' '
         mstring_strip_char retval, ','
         mstring_strip_char retval, ' '
-        %xdefine args retval
+        %xdefine args__ retval
         ; split off next argument from arguments
-        %strlen len args
-        %if len == 0
-            %undef len
+        %strlen len__ args__
+        %if len__ == 0
             %exitrep
         %endif
-        %undef len
-        %assign num_args num_args+1
-        mstring_index_of args, ','
-        %substr arg args 0,retval-1
-        %substr args args retval+1,-1
+        %assign num_args__ num_args__+1
+        mstring_index_of args__, ','
+        %substr arg__ args__ 0,retval-1
+        %substr args__ args__ retval+1,-1
 
         ; parse argument
 
-        parse_arg arg
-        %deftok arg_type arg_type_str
+        parse_arg arg__
+        %deftok arg_type__ arg_type_str__
 
         ; The preprocessor doesn't care that we hit %exitrep before.
         ; It still insists that all variables must exist here.
-        %ifdef arg_name_str
-            %strcat args_with_comma args_with_comma, ", ", arg_name_str
+        %ifdef arg_name_str__
+            %strcat args_with_comma__ args_with_comma__, ", ", arg_name_str__
 
             ; define register for argument name
-            %strcat arg_name '%$', arg_name_str
+            %strcat arg_name '%$', arg_name_str__
 
-            %if arg_is_in_register
-                __%[arg_type]__create_fields__ arg_type_str, arg_name
+            %if arg_is_in_register__
+                __%[arg_type__]__create_fields__ arg_type_str__, arg_name
             %endif
 
             %deftok arg_name arg_name
-            %if arg_is_in_arg_register
-                %xdefine %[arg_name] arg_reg
-            %elif arg_is_in_nv_register
-                %substr reg %$__regs 0,3
+            %if arg_is_in_arg_register__
+                %xdefine %[arg_name] arg_reg__
+            %elif arg_is_in_nv_register__
+                %substr reg__ %$__regs 0,3
                 %substr %$__regs %$__regs 4,-1
-                %strcat %$__arg_nvregs_to_pop %$__arg_nvregs_to_pop, ", ", reg
-                %strcat nv_arg_instructions nv_arg_instructions, `push `, reg, `\nmov `, reg, `, `, arg_reg_str, `\n`
-                %deftok reg reg
-                %xdefine %[arg_name] reg
-                %undef reg
+                %strcat %$__arg_nvregs_to_pop %$__arg_nvregs_to_pop, ", ", reg__
+                %strcat nv_arg_instructions__ nv_arg_instructions__, `push `, reg__, `\nmov `, reg__, `, `, arg_reg_str__, `\n`
+                %deftok reg__ reg__
+                %xdefine %[arg_name] reg__
             %else
                 %xdefine %[arg_name] qword [rbp - (%$__argsize) - 8]
-                push arg_reg
+                push arg_reg__
                 %assign %$__argsize %$__argsize + 8
             %endif
 
             ; handle type shenanigans
-            %assign is_primitive arg_type %+ __is_primitive
+            %assign is_primitive__ arg_type__ %+ __is_primitive
 
 
             ; insert `check_rtti` if needed
-            %if !is_primitive && !arg_type_is_out
-                check_rtti arg_reg, arg_type
+            %if !is_primitive__ && !arg_type_is_out__
+                check_rtti arg_reg__, arg_type__
             %endif
 
-            %if !is_primitive && !arg_is_in_register && !arg_type_is_ref
-                %strcat error_msg "Object argument `", arg_name_str, "` stored on stack must be a reference: `&", arg_type_str, "`"
-                %error error_msg
+            %if !is_primitive__ && !arg_is_in_register__ && !arg_type_is_ref__
+                %strcat error_msg__ "Object argument `", arg_name_str__, "` stored on stack must be a reference: `&", arg_type_str__, "`"
+                %error error_msg__
             %endif
 
-            %if !is_primitive && arg_is_in_register && arg_type_is_ref
-                %strcat error_msg "Object argument `", arg_name_str, "` used as register must not be a reference: `", arg_type_str, "`"
-                %error error_msg
+            %if !is_primitive__ && arg_is_in_register__ && arg_type_is_ref__
+                %strcat error_msg__ "Object argument `", arg_name_str__, "` used as register must not be a reference: `", arg_type_str__, "`"
+                %error error_msg__
             %endif
 
-            %if is_primitive && arg_type_is_ref
-                %strcat error_msg "Primitive argument `", arg_name_str, "` must not be a reference: `", arg_type_str, "`"
-                %error error_msg
+            %if is_primitive__ && arg_type_is_ref__
+                %strcat error_msg__ "Primitive argument `", arg_name_str__, "` must not be a reference: `", arg_type_str__, "`"
+                %error error_msg__
             %endif
         %endif
     %endrep
 
-    mstring_to_instructions nv_arg_instructions
+    mstring_to_instructions nv_arg_instructions__
 
-    %deftok args_with_comma_leading args_with_comma
-    mstring_strip_char args_with_comma, ','
-    %deftok args_with_comma retval
-    %xdefine %[name](%[args_with_comma]) call_%[num_args] %[name] %[args_with_comma_leading]
+    %deftok args_with_comma_leading__ args_with_comma__
+    mstring_strip_char args_with_comma__, ','
+    %deftok args_with_comma__ retval
+    %xdefine %[name__](%[args_with_comma__]) call_%[num_args__] %[name__] %[args_with_comma_leading__]
 
-    %undef error_msg
-    %undef nv_arg_instructions
-    %undef is_primitive
-    %undef arg_type_is_ref
-    %undef arg_type_is_out
-    %undef arg_is_in_arg_register
-    %undef arg_is_in_nv_register
-    %undef args_with_comma
-    %undef arg_reg
-    %undef arg_reg_str
-    %undef arg_regs
-    %undef num_args
-    %undef args
-    %undef arg
-    %undef reg
+    %undef args_with_comma_leading__
+    %undef error_msg__
+    %undef nv_arg_instructions__
+    %undef is_primitive__
+    %undef arg_type_is_ref__
+    %undef arg_type_is_out__
+    %undef arg_is_in_arg_register__
+    %undef arg_is_in_nv_register__
+    %undef args_with_comma__
+    %undef arg_reg__
+    %undef arg_reg_str__
+    %undef arg_regs__
+    %undef num_args__
+    %undef args__
+    %undef arg__
+    %undef reg__
     %undef arg_name
-    %undef arg_name_str
-    %undef arg_type
-    %undef arg_type_str
-    %undef open
-    %undef close
-    %undef input
-    %undef i
-    %undef len
+    %undef arg_name_str__
+    %undef arg_type__
+    %undef arg_type_str__
+    %undef arg_is_in_register__
+    %undef name__
+    %undef open__
+    %undef close__
+    %undef input__
+    %undef len__
 %endmacro
 
 %macro local 1+
     %defstr input %1
     mstring_index_of input, ':'
-    %substr name input 0,retval-1
+    %substr name__ input 0,retval-1
     %substr type_str input retval+1,-1
     mstring_strip_char type_str, ' '
     %xdefine type_str retval
 
     %deftok type type_str
-    %strcat name "%$", name
-    __%[type]__create_fields__ type_str, name
-    %deftok name name
+    %strcat name__ "%$", name__
+    __%[type]__create_fields__ type_str, name__
+    %deftok name__ name__
     %xdefine addr rbp - (%[%$__argsize] + %[%$__localsize]) - %[type]_size
     %if type %+ __is_primitive == 1
-        %xdefine %[name] qword [addr]
+        %xdefine %[name__] qword [addr]
     %else
-        %xdefine %[name] addr
+        %xdefine %[name__] addr
     %endif
     %xdefine %$__localsize %$__localsize + %[type]_size
 
     %undef addr
     %undef type
     %undef type_str
-    %undef name
+    %undef name__
     %undef input
 %endmacro
 
