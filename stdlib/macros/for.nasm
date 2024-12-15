@@ -21,11 +21,11 @@
     mstring_index_of initialization__, '='
     %substr var__ initialization__ 0,retval-1
     %deftok var__ var__
-    %substr value__ initialization__ retval+1,0
+    %substr value__ initialization__ retval+1,-1
     %deftok value__ value__
     mov var__, value__
     .__for%[__FOR_COUNT__]:
-    parse_condition condition__, .__if%[__FOR_COUNT__]_end
+    parse_condition condition__, .__for%[__FOR_COUNT__]_end
     marray_push __FOR_STACK__, advancement__
     %undef for__
     %undef advancement__
@@ -40,6 +40,7 @@
     mstring_to_instructions retval
     marray_pop __FOR_STACK__
     %deftok retval retval
+    jmp .__for%[retval]
     .__for%[retval]_end:
 %endmacro
 
