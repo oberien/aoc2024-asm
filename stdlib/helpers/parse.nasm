@@ -69,6 +69,7 @@ fn skip_whitespace(string: String = rdi, index: u64 = rsi):
     .end:
 endfn
 
+; Parses a line with whitespace-separated numbers into an Array<u64>
 ; INPUT:
 ; * rdi: String-ptr
 ; * rsi: index
@@ -93,4 +94,16 @@ fn parse_line_as_u64_array(string: String = reg, index: u64 = reg, out_array: &o
 
     .end:
     mov rsi, %$index
+endfn
+
+; Consume a char if it matches the provided char.
+; OUTPUT:
+; * rsi: index after line
+; * EFLAGS are set to comparison between String-character and passed char.
+fn consume_char_eq(string: String = rdi, index: u64 = rsi, char: u64 = rdx):
+    mov rax, rsi
+    lea rcx, [rsi + 1]
+    mov rdi, %$string.ptr
+    cmp [rdi + %$index], dl
+    cmove rsi, rcx
 endfn
