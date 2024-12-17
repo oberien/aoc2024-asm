@@ -29,6 +29,26 @@ fn String__append_raw(this: String = rdi, buffer: ptr = rsi, num_bytes: u64 = rd
     memcpy(rax, %$buffer, %$num_bytes)
 endfn
 
+; INPUT:
+; * rdi: this-ptr
+; * rsi: 1-byte char
+; OUTPUT:
+; * rax: index of needle or -1 if not found
+fn String__index_of(this: String = rdi, needle: u64 = rsi):
+    mov rdx, %$needle
+    for (rcx = 0, rcx < %$this.len, inc rcx):
+        mov rax, %$this.ptr
+        if ([rax + rcx] == dl):
+            mov rax, rcx
+            jmp .end
+        endif
+    endfor
+
+    .fail:
+        mov rax, -1
+    .end:
+endfn
+
 
 ; INPUT:
 ; * rdi: this-ptr
