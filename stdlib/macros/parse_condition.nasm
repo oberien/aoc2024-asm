@@ -1,6 +1,6 @@
 ; string, label if condition is wrong
 ; e.g. `"rax < rdi", .endif`
-%macro parse_condition 2
+%macro parse_condition 2.nolist
     %push
     %strlen %$len %1
     mstring_index_of %1, "<"

@@ -2,7 +2,7 @@
 %define SYSCALLARGREGS() "rdi,rsi,rdx,r10,r8,r9"
 
 ; function name, register-string, args...
-%macro call_n 2-*
+%macro call_n 2-*.nolist
     %assign index__ 0
     %xdefine fn_name__ %1
     %xdefine argregs__ %2
@@ -31,46 +31,46 @@
     %undef argstr__
 %endmacro
 
-%macro syscall_0 1
+%macro syscall_0 1.nolist
     call_n %1, SYSCALLARGREGS
 %endmacro
-%macro syscall_1 2
+%macro syscall_1 2.nolist
     call_n %1, SYSCALLARGREGS, %2
 %endmacro
-%macro syscall_2 3
+%macro syscall_2 3.nolist
     call_n %1, SYSCALLARGREGS, %2, %3
 %endmacro
-%macro syscall_3 4
+%macro syscall_3 4.nolist
     call_n %1, SYSCALLARGREGS, %2, %3, %4
 %endmacro
-%macro syscall_4 5
+%macro syscall_4 5.nolist
     call_n %1, SYSCALLARGREGS, %2, %3, %4, %5
 %endmacro
-%macro syscall_5 6
+%macro syscall_5 6.nolist
     call_n %1, SYSCALLARGREGS, %2, %3, %4, %5, %6
 %endmacro
-%macro syscall_6 7
+%macro syscall_6 7.nolist
     call_n %1, SYSCALLARGREGS, %2, %3, %4, %5, %6, %7
 %endmacro
 
-%macro call_0 1
+%macro call_0 1.nolist
     call_n %1, SYSV64ARGREGS
 %endmacro
-%macro call_1 2
+%macro call_1 2.nolist
     call_n %1, SYSV64ARGREGS, %2
 %endmacro
-%macro call_2 3
+%macro call_2 3.nolist
     call_n %1, SYSV64ARGREGS, %2, %3
 %endmacro
-%macro call_3 4
+%macro call_3 4.nolist
     call_n %1, SYSV64ARGREGS, %2, %3, %4
 %endmacro
-%macro call_4 5
+%macro call_4 5.nolist
     call_n %1, SYSV64ARGREGS, %2, %3, %4, %5
 %endmacro
-%macro call_5 6
+%macro call_5 6.nolist
     call_n %1, SYSV64ARGREGS, %2, %3, %4, %5, %6
 %endmacro
-%macro call_6 7
+%macro call_6 7.nolist
     call_n %1, SYSV64ARGREGS, %2, %3, %4, %5, %6, %7
 %endmacro

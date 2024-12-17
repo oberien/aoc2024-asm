@@ -6,7 +6,7 @@
 %xdefine __IF_STACK__() ""
 
 ; if (rax < rdi):
-%macro if 1+
+%macro if 1+.nolist
     %assign __IF_COUNT__ __IF_COUNT__ + 1
     marray_push __IF_STACK__, __IF_COUNT__
     marray_push __IF_STACK__, __IF_COUNT__
