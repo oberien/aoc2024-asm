@@ -92,15 +92,16 @@
 
 ; stored non-volatile registers == %$__regs_to_push
 ; locals == %$__localsize
-; stored non-volatile registers for function-arguments == %$__arg_nvregs_to_pop
-; pushed arguments == %$__argsize
+; stored non-volatile registers for function-arguments == %$__arg_nvregs_to_pop, %$__nv_argsize
+; pushed arguments == %$__pushed_argsize
 ; return address <- ebp
 
 %macro fn 1+
     %push
     %xdefine %$__regs "r12r13r14r15rbx"
     %xdefine %$__regs_to_push ""
-    %xdefine %$__argsize 0
+    %assign %$__pushed_argsize 0
+    %assign %$__nv_argsize 0
     %xdefine %$__arg_nvregs_to_pop ""
     %xdefine %$__localsize 0
 
@@ -149,26 +150,27 @@
             %strcat args_with_comma__ args_with_comma__, ", ", arg_name_str__
 
             ; define register for argument name
-            %strcat arg_name '%$', arg_name_str__
+            %strcat arg_name__ '%$', arg_name_str__
 
             %if arg_is_in_register__
-                __%[arg_type__]__create_fields__ arg_type_str__, arg_name
+                __%[arg_type__]__create_fields__ arg_type_str__, arg_name__
             %endif
 
-            %deftok arg_name arg_name
+            %deftok arg_name__ arg_name__
             %if arg_is_in_arg_register__
-                %xdefine %[arg_name] arg_reg__
+                %xdefine %[arg_name__] arg_reg__
             %elif arg_is_in_nv_register__
                 %substr reg__ %$__regs 0,3
                 %substr %$__regs %$__regs 4,-1
                 %strcat %$__arg_nvregs_to_pop %$__arg_nvregs_to_pop, ", ", reg__
                 %strcat nv_arg_instructions__ nv_arg_instructions__, `push `, reg__, `\nmov `, reg__, `, `, arg_reg_str__, `\n`
                 %deftok reg__ reg__
-                %xdefine %[arg_name] reg__
+                %xdefine %[arg_name__] reg__
+                %assign %$__nv_argsize %$__nv_argsize + 8
             %else
-                %xdefine %[arg_name] qword [rbp - (%$__argsize) - 8]
+                %xdefine %[arg_name__] qword [rbp - (%$__pushed_argsize) - 8]
                 push arg_reg__
-                %assign %$__argsize %$__argsize + 8
+                %assign %$__pushed_argsize %$__pushed_argsize + 8
             %endif
 
             ; handle type shenanigans
@@ -220,7 +222,7 @@
     %undef args__
     %undef arg__
     %undef reg__
-    %undef arg_name
+    %undef arg_name__
     %undef arg_name_str__
     %undef arg_type__
     %undef arg_type_str__
@@ -244,7 +246,7 @@
     %strcat name__ "%$", name__
     __%[type]__create_fields__ type_str, name__
     %deftok name__ name__
-    %xdefine addr rbp - (%[%$__argsize] + %[%$__localsize]) - %[type]_size
+    %xdefine addr rbp - (%[%$__pushed_argsize] + %[%$__nv_argsize] + %[%$__localsize]) - %[type]_size
     %if type %+ __is_primitive == 1
         %xdefine %[name__] qword [addr]
     %else
@@ -322,7 +324,7 @@
     %ifnidn localsize_str, "0"
         %assign has_locals 1
     %endif
-    %assign has_pushed_args %$__argsize != 0
+    %assign has_pushed_args %$__pushed_argsize != 0
     %assign has_pushed_nvargregs 0
     %ifnidn %$__arg_nvregs_to_pop, ""
         %assign has_pushed_nvargregs 1

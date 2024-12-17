@@ -101,6 +101,9 @@ endfn
 ; * rsi: index after line
 ; * EFLAGS are set to comparison between String-character and passed char.
 fn consume_char_eq(string: String = rdi, index: u64 = rsi, char: u64 = rdx):
+    if (%$index >= %$string.len):
+        panic `consume_char_eq called with index out of bounds`
+    endif
     mov rax, rsi
     lea rcx, [rsi + 1]
     mov rdi, %$string.ptr

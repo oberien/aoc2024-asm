@@ -23,6 +23,21 @@ fn u64__print_radix(number: u64 = reg, radix: u64 = reg, alphabet: ptr = reg, pr
 
     ; convert
 
+    ; We are dividing the number with modulo.
+    ; As such, we need to write each digit from back to front.
+    ; If we convert 1337 as decimal, we need have the following stack layout
+    ; afterwards:
+    ;        +--+--+--+--++--+--+--+--+
+    ; rsp -> |00|00|00|00||00|00|00|00| <- content
+    ;        |00|00|00|00||00|00|00|00|
+    ;        |00|00|00|00||00|00|00|00|
+    ;        |00|00|00|00||31|33|33|37|
+    ;        +--+--+--+--++--+--+--+--+
+    ; r14    |00|00|00|00||00|00|00|00|
+    ; r13    |00|00|00|00||00|00|00|00|
+    ; r12    |00|00|00|00||00|00|00|00|
+    ;        +--+--+--+--++--+--+--+--+
+
     mov rax, %$number
     mov %$len, 0
     .loop:
@@ -32,13 +47,14 @@ fn u64__print_radix(number: u64 = reg, radix: u64 = reg, alphabet: ptr = reg, pr
         inc %$len
         mov rdi, %$len
         neg rdi
-        mov [%$content + rdi], dl
+        ; the byte from the back is content + 32 - len
+        mov [%$content + 32 + rdi], dl
         test rax, rax
         jnz .loop
 
     mov rdi, %$len
     neg rdi
-    lea rsi, [%$content + rdi]
+    lea rsi, [%$content + 32 + rdi]
     write_all(STDOUT, rsi, %$len)
 endfn
 

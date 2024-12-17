@@ -1,6 +1,7 @@
 %macro panic 1
-    %strcat x %1, `\n`
-    rodata_cstring %%s, x
+    %strcat error_msg__ %1, `\n`
+    rodata_cstring %%s, error_msg__
+    %undef error_msg__
     mov rdi, %%s
     mov rsi, %%s_len
     call _panic
